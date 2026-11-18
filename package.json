@@ -19,6 +19,7 @@
     "build:crazygames": "tsc --noEmit && vite build --mode crazygames",
     "build:poki": "tsc --noEmit && vite build --mode poki",
     "build:all": "tsc --noEmit && vite build && vite build --mode yandex && vite build --mode crazygames && vite build --mode poki",
+    "check:builds": "node scripts/check-builds.mjs",
     "preview": "vite preview",
     "zip": "node scripts/zip.mjs",
     "typecheck": "tsc --noEmit",

@@ -17,4 +17,6 @@ jobs:
       - run: npm ci
       # type-check, lint, formatting, unit tests
       - run: npm run check
-      - run: npm run build
+      # every platform, and no platform build carries another platform's adapter
+      - run: npm run build:all
+      - run: npm run check:builds
