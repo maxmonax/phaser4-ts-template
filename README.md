@@ -70,7 +70,7 @@ Open [http://localhost:9100](http://localhost:9100).
 │   ├── save/            # Saved game state
 │   ├── pause/           # Pause with reasons (ad, rotate overlay, hidden tab, portal)
 │   ├── audio/           # Audio manager, saved sound switches
-│   ├── locale/          # Translations (en, ru)
+│   ├── locale/          # Translations (10 languages)
 │   ├── events/          # Event bus and bridge to the host page
 │   ├── scaling/         # Visible area, orientation overlay
 │   ├── data/            # Config, runtime params, audio list, atlas frame types
@@ -103,8 +103,8 @@ Open [http://localhost:9100](http://localhost:9100).
 - **Layout** — fixed-height scaling (2400×1080 with a 1440×1080 safe zone), anchors to the edges
   of the visible area (`this.anchor(obj, { right: 110, top: 110 })`) and an overlay that asks to
   rotate the device and pauses the game meanwhile.
-- **Localization** — English and Russian, type-safe keys, plural forms, number formatting,
-  switching at runtime with `LangButton`. See [Localization](#localization).
+- **Localization** — ten languages, type-safe keys, plural forms, number formatting, a language
+  list for the player, tests that check every translation. See [Localization](#localization).
 - **Audio manager** — `AudioMng`: music with fades, crossfade and ducking, sound effects with
   instance limits, separate music/sfx switches and volumes, global mute. It belongs to the game,
   not to a scene, so music and fades continue across scene changes. `AudioSettings` keeps the
@@ -201,7 +201,7 @@ const btnPlay = textButton(this, this.t('btn_play'), this.onPlayClick, this, {
 });
 ```
 
-`ToggleButton` is an on/off switch, `LangButton` cycles the languages. Rounded shapes come from
+`ToggleButton` is an on/off switch, `LangButton` opens the list of languages. Rounded shapes come from
 `gui/shapes.ts`: they are drawn once into a texture (a `Graphics` object is tessellated again on
 every frame).
 
@@ -223,8 +223,11 @@ there and pin the rest to the edges with `this.anchor()`; `Viewport` gives the v
 
 ## Localization
 
-Texts are in `src/locale/`. English is the reference: a key is added to `en.ts` first, and the
-compiler asks for it in every other locale.
+The ten languages games are usually translated into: English, Russian, German, French, Spanish,
+Brazilian Portuguese, Italian, Japanese, Korean and Simplified Chinese. Texts are in
+`src/locale/`, one file per language. English is the reference: a key is added to `en.ts` first,
+and the compiler asks for it in every other locale. Unit tests check every translation: the same
+keys and parameters as in English, no more plural forms than the language has.
 
 ```ts
 this.t('demo_best', { count: 5 }); // 'Best: 5 orbs'
@@ -234,17 +237,33 @@ this.registerLangChange(this.updateTexts); // texts follow the language switch
 
 - **Parameters** — `{name}` in a string is replaced by the parameter `name`.
 - **Plural forms** — `{count|orb|orbs}` picks a form by the number in `count`. The forms go in the
-  order of the language's plural categories: two for English, three for Russian
-  (`{count|шар|шара|шаров}`).
-- **The language** is the one the player picked (`LangButton` saves it), then the portal's, then
-  the browser's, then English.
+  order of the language's plural categories (a missing form falls back to the last one):
+
+  | Language                             | Forms              | Example                       |
+  | ------------------------------------ | ------------------ | ----------------------------- |
+  | English, German                      | `one\|other`       | `{count\|orb\|orbs}`           |
+  | Russian                              | `one\|few\|many`   | `{count\|шар\|шара\|шаров}`    |
+  | French, Spanish, Portuguese, Italian | `one\|many\|other` | `{count\|bulle\|bulles}`       |
+  | Japanese, Korean, Chinese            | none               | `{count}個`                   |
+
+  In French, Spanish, Portuguese and Italian `many` is for a million and more, so two forms,
+  singular and plural, are enough.
+
+- **The language** is the one the player picked (`LangButton` opens the list, the choice is
+  saved), then the portal's, then the browser's, then English. Any Chinese variant gets
+  Simplified Chinese, any Portuguese one gets Brazilian Portuguese.
+- **Fonts** — the bundled font (Ubuntu, Latin and Cyrillic) covers seven of the languages. Chinese,
+  Japanese and Korean are drawn with a system font of the device: every phone and computer has
+  one, and a CJK web font would weigh several megabytes. The page `lang` follows the game language,
+  so the browser picks the Japanese, Korean or Chinese variant of the system font.
 - **Long translations** — `fitText(text, maxWidth)` scales a text down to fit; buttons do it
-  themselves.
+  themselves. German and Portuguese are usually the longest.
 
 **Adding a language:** add its code to `LANGS` in `src/locale/LocaleKeys.ts` and follow the
-compiler: a name in `LANG_NAMES`, a locale file listed in `LocaleMng.ts`. Then import the font
-subset with its letters in `src/index.ts` and add a sample letter to `SAMPLE_TEXT` in
-`src/utils/FontLoader.ts`.
+compiler: a name in `LANG_NAMES`, a locale file listed in `LOCALES` in `LocaleMng.ts`. Check that
+the font has its letters: Turkish, Polish, Czech or Vietnamese need another Fontsource subset
+(`latin-ext`, `vietnamese`) imported in `src/index.ts` and a sample letter in `SAMPLE_TEXT`
+(`src/utils/FontLoader.ts`). Right-to-left languages (Arabic, Hebrew) also need a mirrored layout.
 
 ## Assets
 

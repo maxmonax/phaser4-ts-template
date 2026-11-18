@@ -21,6 +21,7 @@ export const Config = {
   /**
    * Font families used in the game. Every family listed here is loaded
    * before the game starts; the font files are imported in index.ts.
+   * Chinese, Japanese and Korean are drawn with a system font, see `Theme`.
    */
   FONT: {
     MAIN: 'Ubuntu',

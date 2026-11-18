@@ -51,7 +51,9 @@ that are not visible from the structure, and recipes for common changes.
    a check in `parseSave()`. Read and write with `SaveMng.get` and `SaveMng.set`, not with
    `localStorage`.
 9. **Texts.** No text for the player in code. Add the key to `src/locale/en.ts` first, then to
-   every other locale. Use `this.t('key', params)`; plural forms are `{count|orb|orbs}`. Every
+   all ten locale files (`npm test` fails on a missing key or parameter). Use
+   `this.t('key', params)`; plural forms are `{count|orb|orbs}`, their order differs per language
+   (see `LocaleMng.t()`), Japanese, Korean and Chinese have none. Every
    text must follow a language change (`registerLangChange`, `Popup.updateTexts`). A translation
    can be longer than the original: `fitText()`.
 10. **Look.** Colors, sizes and text styles come from `Theme`, not from literals in scenes.
@@ -78,7 +80,7 @@ that are not visible from the structure, and recipes for common changes.
 the constructor with `this.content.add()`, set texts in `updateTexts()`, finish with
 `this.close(result)`. Open it with `await PopupScene.open(this, MyPopup, ...constructorArgs)`.
 
-**Add a text.** Key in `src/locale/en.ts`, translation in the other locale files, `this.t('key')`
+**Add a text.** Key in `src/locale/en.ts`, translation in the nine other locale files, `this.t('key')`
 in the scene, and a line in the scene's language-change handler.
 
 **Add a save field.** In `src/save/SaveData.ts`: the field in `SaveData`, its default in
@@ -92,6 +94,7 @@ in the scene, and a line in the scene's language-change handler.
 tinted in code.
 
 **Add a language.** Add the code to `LANGS` in `src/locale/LocaleKeys.ts` and follow the compiler
-errors. Import the font subset in `src/index.ts`.
+errors. If the bundled font lacks its letters (Turkish, Polish, Vietnamese), import the
+Fontsource subset in `src/index.ts`: see "Adding a language" in `README.md`.
 
 **Add a portal.** See "Adding a platform" in `README.md`.

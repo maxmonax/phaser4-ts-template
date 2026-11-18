@@ -131,37 +131,79 @@ describe('LocaleMng', () => {
     });
   });
 
+  describe('plural forms of the other languages', () => {
+    it('German: one|other', () => {
+      locale.setLang('de');
+
+      expect(t('demo_result_score', { count: 1 })).toBe('1 Blase');
+      expect(t('demo_result_score', { count: 0 })).toBe('0 Blasen');
+      expect(t('demo_result_score', { count: 5 })).toBe('5 Blasen');
+    });
+
+    it('French: two forms cover one|many|other, and 0 is singular', () => {
+      locale.setLang('fr');
+
+      expect(t('demo_result_score', { count: 0 })).toBe('0 bulle');
+      expect(t('demo_result_score', { count: 1 })).toBe('1 bulle');
+      expect(t('demo_result_score', { count: 2 })).toBe('2 bulles');
+      // "many": a million and more, the missing form falls back to the last one
+      expect(t('demo_result_score', { count: 1_000_000 })).toBe('1000000 bulles');
+    });
+
+    it('Spanish: 0 is plural', () => {
+      locale.setLang('es');
+
+      expect(t('demo_result_score', { count: 0 })).toBe('0 burbujas');
+      expect(t('demo_result_score', { count: 1 })).toBe('1 burbuja');
+    });
+
+    it('Japanese: no plural forms', () => {
+      locale.setLang('ja');
+
+      expect(t('demo_result_score', { count: 1 })).toBe('バブル1個');
+      expect(t('demo_result_score', { count: 5 })).toBe('バブル5個');
+    });
+  });
+
   it('nextLang() cycles through the languages', () => {
-    expect(locale.nextLang()).toBe('ru');
+    expect(locale.nextLang()).toBe(LANGS[1]);
 
-    locale.setLang('ru');
+    locale.setLang(LANGS[LANGS.length - 1]);
 
-    expect(locale.nextLang()).toBe('en');
+    expect(locale.nextLang()).toBe(LANGS[0]);
   });
 
   it('names every language', () => {
     expect(Object.keys(LANG_NAMES).sort()).toEqual([...LANGS].sort());
-  });
-
-  it('every locale defines the same keys', () => {
-    expect(Object.keys(ru).sort()).toEqual(Object.keys(en).sort());
   });
 });
 
 describe('detectLang', () => {
   it('picks the first supported language', () => {
     expect(detectLang(['ru-RU', 'en-US'])).toBe('ru');
-    expect(detectLang(['de-DE', 'ru', 'en'])).toBe('ru');
+    expect(detectLang(['tr-TR', 'de', 'en'])).toBe('de');
     expect(detectLang(['en-GB', 'ru'])).toBe('en');
   });
 
   it('ignores the letter case and the region', () => {
     expect(detectLang(['RU'])).toBe('ru');
     expect(detectLang(['ru-Cyrl-RU'])).toBe('ru');
+    expect(detectLang(['pt-BR'])).toBe('pt');
+    expect(detectLang(['pt-PT'])).toBe('pt');
+    expect(detectLang(['es-419'])).toBe('es');
+    expect(detectLang(['fr-CA'])).toBe('fr');
+    expect(detectLang(['ja-JP'])).toBe('ja');
+    expect(detectLang(['ko-KR'])).toBe('ko');
+  });
+
+  it('gives Simplified Chinese to every Chinese variant', () => {
+    expect(detectLang(['zh-CN'])).toBe('zh');
+    expect(detectLang(['zh-TW'])).toBe('zh');
+    expect(detectLang(['zh-Hant-HK'])).toBe('zh');
   });
 
   it('falls back to the default language', () => {
-    expect(detectLang(['de-DE', 'fr'])).toBe('en');
+    expect(detectLang(['tr-TR', 'pl', 'nl'])).toBe('en');
     expect(detectLang([])).toBe('en');
   });
 

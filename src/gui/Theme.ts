@@ -15,9 +15,17 @@ export function cssColor(color: number): string {
   return `#${color.toString(16).padStart(6, '0')}`;
 }
 
+/**
+ * The bundled font first. The letters it does not have (Chinese, Japanese, Korean) come
+ * from a system font of the device, which also takes over if the web font fails to load.
+ * The page language (`<html lang>`, set by `index.ts`) helps the browser pick the right
+ * system font for each of these languages.
+ */
+const FONT_FAMILY = `${Config.FONT.MAIN}, sans-serif`;
+
 function font(size: number, bold: boolean, color: number): TextStyle {
   return {
-    fontFamily: Config.FONT.MAIN,
+    fontFamily: FONT_FAMILY,
     fontSize: `${size}px`,
     fontStyle: bold ? 'bold' : 'normal',
     color: cssColor(color),

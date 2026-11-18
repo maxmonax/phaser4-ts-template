@@ -8,6 +8,7 @@ export const en = {
   btn_menu: 'Menu',
   settings_title: 'Settings',
   pause_title: 'Pause',
+  language_title: 'Language',
   ad_soon: 'Ad in',
 
   // Demo round (src/demo). `{count|orb|orbs}` picks a plural form, see LocaleMng.t().

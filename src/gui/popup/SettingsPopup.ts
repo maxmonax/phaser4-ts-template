@@ -5,7 +5,7 @@ import { LangButton } from '../LangButton';
 import { ToggleButton } from '../ToggleButton';
 import { Popup } from './Popup';
 
-/** Sound, music and language. `PopupScene.open(this, SettingsPopup)` */
+/** Sound, music and the language button. `PopupScene.open(this, SettingsPopup)` */
 export class SettingsPopup extends Popup {
   protected _className = 'SettingsPopup';
 

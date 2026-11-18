@@ -1,8 +1,9 @@
 import * as Phaser from 'phaser';
 import { LANG_NAMES, type Lang } from '@/locale/LocaleKeys';
 import { LocaleMng } from '@/locale/LocaleMng';
-import { SaveMng } from '@/save/SaveMng';
+import { PopupScene } from '@/scenes/PopupScene';
 import { MyTextButton } from './basic/MyTextButton';
+import { LanguagePopup } from './popup/LanguagePopup';
 import { Theme } from './Theme';
 
 export type LangButtonOptions = {
@@ -11,8 +12,8 @@ export type LangButtonOptions = {
 };
 
 /**
- * Language switch: shows the name of the current language, a click selects
- * the next one and saves the choice. Everything subscribed to the language change
+ * Language button: shows the name of the current language, a click opens the list
+ * of languages (`LanguagePopup`). Everything subscribed to the language change
  * (`BaseScene.registerLangChange`, popups) updates its texts.
  */
 export class LangButton extends MyTextButton {
@@ -30,7 +31,7 @@ export class LangButton extends MyTextButton {
       size: { w: options.width ?? 400, h: height },
       hoverScaleFactor: 1.05,
     });
-    this.setClickListener(this.onClickNext, this);
+    this.setClickListener(this.onClickOpen, this);
 
     const locale = LocaleMng.getInstance();
     const onLangChange = (lang: Lang) => this.setText(LANG_NAMES[lang]);
@@ -39,10 +40,7 @@ export class LangButton extends MyTextButton {
     onLangChange(locale.getLang());
   }
 
-  private onClickNext(): void {
-    const locale = LocaleMng.getInstance();
-    const next = locale.nextLang();
-    locale.setLang(next);
-    SaveMng.set('lang', next);
+  private onClickOpen(): void {
+    void PopupScene.open(this.scene, LanguagePopup);
   }
 }

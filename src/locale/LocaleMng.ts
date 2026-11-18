@@ -1,8 +1,28 @@
+import { de } from './de';
 import { en } from './en';
-import { ru } from './ru';
+import { es } from './es';
+import { fr } from './fr';
+import { it } from './it';
+import { ja } from './ja';
+import { ko } from './ko';
 import { DEFAULT_LANG, LANGS, type Lang, type LocaleData, type LocaleKey } from './LocaleKeys';
+import { pt } from './pt';
+import { ru } from './ru';
+import { zh } from './zh';
 
-const LOCALES: Record<Lang, LocaleData> = { en, ru };
+/** The texts of every language. All of them are in the bundle: about 1 kB per language. */
+export const LOCALES: Readonly<Record<Lang, LocaleData>> = {
+  en,
+  ru,
+  de,
+  fr,
+  es,
+  pt,
+  it,
+  ja,
+  ko,
+  zh,
+};
 
 export type LocaleParams = Record<string, string | number>;
 
@@ -62,9 +82,14 @@ class LocaleMng {
    *
    * - `{name}` is replaced by the parameter `name`.
    * - `{count|orb|orbs}` picks a plural form by the number in `count`. The forms are
-   *   listed in the order of the language's plural categories: `one|other` for English,
-   *   `one|few|many` for Russian (`{count|шар|шара|шаров}`). A missing form falls back
-   *   to the last one.
+   *   listed in the order of the language's plural categories (`Intl.PluralRules`):
+   *   - English, German: `one|other`;
+   *   - Russian: `one|few|many` — `{count|шар|шара|шаров}`;
+   *   - French, Spanish, Portuguese, Italian: `one|many|other`, where `many` is for
+   *     a million and more; two forms, singular and plural, are usually enough;
+   *   - Japanese, Korean, Chinese: no plural forms, write the number without a block.
+   *
+   *   A missing form falls back to the last one.
    */
   t(key: LocaleKey, params?: LocaleParams): string {
     let str = this._data[key];

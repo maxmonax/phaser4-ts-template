@@ -9,6 +9,7 @@ export const ru: LocaleData = {
   btn_menu: 'В меню',
   settings_title: 'Настройки',
   pause_title: 'Пауза',
+  language_title: 'Язык',
   ad_soon: 'Реклама через',
 
   // Russian has three plural forms: 1 шар, 2 шара, 5 шаров.
