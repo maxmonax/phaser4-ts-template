@@ -72,8 +72,8 @@ Open [http://localhost:9100](http://localhost:9100).
 │   ├── audio/           # Audio manager, saved sound switches
 │   ├── locale/          # Translations (10 languages)
 │   ├── events/          # Event bus and bridge to the host page
-│   ├── scaling/         # Visible area, orientation overlay
-│   ├── data/            # Config, runtime params, audio list, atlas frame types
+│   ├── scaling/         # Visible area, camera centering, orientation overlay
+│   ├── data/            # Config, URL params, audio list, atlas frame types
 │   ├── utils/           # Logging, math, state machines, promises, font loading
 │   ├── debug/           # Frame rate and errors on screen
 │   └── styles/          # Page CSS, the background of every scene
@@ -100,9 +100,10 @@ Open [http://localhost:9100](http://localhost:9100).
   in code, icons are white and tinted, so a game is restyled without redrawing art. See [UI](#ui).
 - **Popups** — `PopupScene.open()`: a panel over a shade that blocks the input below, stacked
   popups, a result as a promise. Settings and pause popups are included.
-- **Layout** — fixed-height scaling (2400×1080 with a 1440×1080 safe zone), anchors to the edges
-  of the visible area (`this.anchor(obj, { right: 110, top: 110 })`) and an overlay that asks to
-  rotate the device and pauses the game meanwhile.
+- **Screen** — the safe area (1440×1080) is always on screen, the canvas grows towards the full
+  area (2400×1080) as the window allows and renders only what is visible (`Phaser.Scale.EXPAND`).
+  Anchors to the visible edges (`this.anchor(obj, { right: 110, top: 110 })`), a "rotate your
+  device" overlay for phones held the wrong way. See [Screen and layout](#screen-and-layout).
 - **Localization** — ten languages, type-safe keys, plural forms, number formatting, a language
   list for the player, tests that check every translation. See [Localization](#localization).
 - **Audio manager** — `AudioMng`: music with fades, crossfade and ducking, sound effects with
@@ -217,9 +218,53 @@ this.scene.resume();
 To make a popup, extend `Popup<Result>`: add objects to `this.content`, call `this.close(result)`.
 `allowDismiss(result)` adds a close button and closes the popup on a tap outside of it.
 
-**Layout.** Coordinates are in a 2400×1080 space. The game is scaled by height, so the visible
-width changes with the window: only the middle 1440 px are always on screen. Keep the gameplay
-there and pin the rest to the edges with `this.anchor()`; `Viewport` gives the visible edges.
+## Screen and layout
+
+The game world has two areas, one inside the other, both centered (`src/data/Config.ts`):
+
+| Area      | Size                                   | Meaning                                                |
+| --------- | -------------------------------------- | ------------------------------------------------------ |
+| Full area | `GW` × `GH`, 2400×1080 (20:9)          | The most a screen can show. Backgrounds are this size. |
+| Safe area | `GW_SAFE` × `GH_SAFE`, 1440×1080 (4:3) | Always on screen whole: the gameplay and the main UI.  |
+
+The canvas uses `Phaser.Scale.EXPAND`: it shows the safe area whole and grows by as much as the
+window allows. It is always exactly the visible area, so nothing off screen is rendered:
+
+| Window         | Canvas    | On screen                                        |
+| -------------- | --------- | ------------------------------------------------ |
+| 4:3            | 1440×1080 | the safe area                                    |
+| 16:9           | 1920×1080 | the safe area and 240 px on each side            |
+| 20:9           | 2400×1080 | the full area                                    |
+| 21:9           | 2520×1080 | the full area, the page background at the sides  |
+| a square       | 1440×1440 | the safe area, the page background above, below  |
+
+The main camera of every scene looks at the middle of the full area (`CenterCameraPlugin`), so
+coordinates do not depend on the window: `Config.GW_HALF, Config.GH_HALF` is the middle of the
+screen, and the safe area is always in the same place. UI near the screen edges is pinned with
+`this.anchor(obj, { right: 110, top: 110 })`: `Viewport` gives the visible edges, never beyond the
+full area. A full-screen shade or background is sized by `Viewport.screen`.
+
+**Orientation.** `Config.ORIENTATION` is `'landscape'`, `'portrait'` or `'any'`. A phone or a
+tablet held the wrong way shows the "rotate your device" overlay: the game keeps loading behind it
+and is paused once loaded. A desktop window of any shape shows the game.
+
+**Choosing the sizes.** The safe area height is the resolution the art is drawn for: 1080 looks
+sharp on most phones, a lower one (720 in landscape, 1200–1400 in portrait) means smaller atlases
+and less memory on weak phones. The safe area is the narrowest screen you design for, the full
+area the widest:
+
+- landscape: safe 4:3 (a tablet), full 20:9 (a phone) — the template's 1440×1080 and 2400×1080;
+- portrait, 1400 high: safe 9:19.5 (a phone) `GW_SAFE = 646`, full 3:4 (a tablet) `GW = 1050`,
+  `GH = GH_SAFE = 1400`, `ORIENTATION: 'portrait'`;
+- both orientations (`'any'`): a square safe area, e.g. 1080×1080, keeps the same scale either
+  way; the layout follows `Viewport.isPortrait`. The demo is laid out for landscape only.
+
+A full area taller than the safe area (`GH > GH_SAFE`) lets tall phones show more in portrait.
+`Config.PRELOADER.DRAW_DEBUG_BORDER` shades both areas on the preloader screen.
+
+**A scene that moves its camera** (a scrolling level) turns the centering off in `create()`:
+`this.centerCamera.enabled = false`, and keeps its UI in another scene. A camera that follows a
+target (`startFollow`) needs nothing.
 
 ## Localization
 
@@ -288,7 +333,8 @@ Everything in `public/` is copied to the build unchanged and is loaded at runtim
 1. Run `npm run init -- my-game "My Game"`. It sets the package name, the page title, the save
    key (`Config.SAVE.KEY`) and the title on the menu screen, and moves this file to `TEMPLATE.md`.
 2. Replace the icons in `public/assets/icons/`.
-3. Set the game size and orientation in `src/data/Config.ts`, the colors in `src/gui/Theme.ts`
+3. Set the game size and orientation in `src/data/Config.ts` (see
+   [Screen and layout](#screen-and-layout)), the colors in `src/gui/Theme.ts`
    and `src/styles/main.css`.
 4. Build your game in place of the demo round. `GameScene` shows how a round uses the template
    (states, pause, ads, saves): rewrite it, and when the demo is no longer needed remove

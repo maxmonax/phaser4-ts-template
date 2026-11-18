@@ -1,5 +1,4 @@
 import { Config } from '../data/Config';
-import { Params } from '../data/Params';
 
 /**
  * Position of an object relative to the edges of the visible area, in game pixels.
@@ -18,36 +17,77 @@ export type Anchor = {
   centerY?: number;
 };
 
+/** A rectangle in world coordinates. */
+export type ScreenRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 /**
- * The part of the game area that is visible in the window.
+ * The part of the game world that is on screen.
  *
- * The game is scaled by height, so the visible height is always `Config.GH`,
- * and the visible width changes with the window: from `Config.GW_SAFE` to `Config.GW`,
- * centered in the game area.
+ * The canvas always shows the safe area (`Config.GW_SAFE` × `Config.GH_SAFE`) whole and grows
+ * by as much as the window allows (`Phaser.Scale.EXPAND`). The main camera of every scene looks
+ * at the middle of the full area (`CenterCameraPlugin`), so world coordinates do not depend
+ * on the window: `Config.GW_HALF, Config.GH_HALF` is the middle of the screen.
+ *
+ * The edges below are the visible part of the full area (`Config.GW` × `Config.GH`): the
+ * layout never goes beyond the full area, even on a wider screen. Anchor the UI to them with
+ * `BaseScene.anchor()`.
  */
 export class Viewport {
-  static get width(): number {
-    return Params.gameWidth > 0 ? Params.gameWidth : Config.GW;
+  /** The visible area in world pixels: the whole full area until the game reports its size. */
+  private static screenWidth: number = Config.GW;
+  private static screenHeight: number = Config.GH;
+
+  /** The game size has changed. Called by `index.ts` on every resize of the game. */
+  static setScreenSize(width: number, height: number): void {
+    Viewport.screenWidth = width;
+    Viewport.screenHeight = height;
   }
 
-  static get height(): number {
-    return Config.GH;
+  /**
+   * The whole visible area. On a screen wider or taller than the full area it goes beyond it:
+   * size a full-screen shade or background by this rectangle, not by `Config.GW` × `Config.GH`.
+   */
+  static get screen(): ScreenRect {
+    return {
+      x: Config.GW_HALF - Viewport.screenWidth / 2,
+      y: Config.GH_HALF - Viewport.screenHeight / 2,
+      width: Viewport.screenWidth,
+      height: Viewport.screenHeight,
+    };
+  }
+
+  /** The screen is taller than wide. For a game that works in both orientations. */
+  static get isPortrait(): boolean {
+    return Viewport.screenHeight > Viewport.screenWidth;
   }
 
   static get left(): number {
-    return (Config.GW - Viewport.width) / 2;
+    return Math.max(0, Config.GW_HALF - Viewport.screenWidth / 2);
   }
 
   static get right(): number {
-    return (Config.GW + Viewport.width) / 2;
+    return Math.min(Config.GW, Config.GW_HALF + Viewport.screenWidth / 2);
   }
 
   static get top(): number {
-    return 0;
+    return Math.max(0, Config.GH_HALF - Viewport.screenHeight / 2);
   }
 
   static get bottom(): number {
-    return Config.GH;
+    return Math.min(Config.GH, Config.GH_HALF + Viewport.screenHeight / 2);
+  }
+
+  static get width(): number {
+    return Viewport.right - Viewport.left;
+  }
+
+  static get height(): number {
+    return Viewport.bottom - Viewport.top;
   }
 
   static get centerX(): number {

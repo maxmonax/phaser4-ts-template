@@ -20,6 +20,7 @@ that are not visible from the structure, and recipes for common changes.
 - `src/scenes/` — Boot → Preloader → Menu ⇄ Game. `PopupScene` (popups) and `TransitionScene`
   (the curtain) run above them.
 - `src/gui/` — `Theme.ts` (every color, size and text style), `buttons.ts`, `shapes.ts`, `popup/`.
+- `src/scaling/` — `Viewport` (the visible edges), `CenterCameraPlugin`, the rotate overlay.
 - `src/demo/` — the demo round. It is an example to replace, not a part of the template.
 - `src/platform/`, `src/ads/`, `src/save/`, `src/pause/`, `src/audio/`, `src/locale/` — services,
   static classes named `*Mng`.
@@ -28,9 +29,13 @@ that are not visible from the structure, and recipes for common changes.
 
 ## Rules
 
-1. **Coordinates.** The game area is 2400×1080 (`Config.GW`, `Config.GH`), scaled by height. Only
-   the middle 1440 px (`Config.GW_SAFE`) are always visible: gameplay must fit there. UI at the
-   edges is placed with `this.anchor(obj, { left: 90, top: 80 })`, never with hand-written math.
+1. **Coordinates.** World coordinates are fixed: the full area is `Config.GW` × `Config.GH`
+   (2400×1080), the safe area `Config.GW_SAFE` × `Config.GH_SAFE` (1440×1080) in its middle is
+   always on screen whole: gameplay must fit there. The canvas is only the visible part
+   (`Phaser.Scale.EXPAND`), and `CenterCameraPlugin` keeps every main camera on the middle of the
+   full area. UI at the edges is placed with `this.anchor(obj, { left: 90, top: 80 })`, never with
+   hand-written math; a full-screen shade is sized by `Viewport.screen`. Do not lay out by
+   `this.scale.width` or `this.cameras.main.width`: they are the screen, not the world.
 2. **Scenes** extend `BaseScene`. Subscribe with `registerResize`, `registerLangChange` and
    `anchor`: they are removed on shutdown. A scene object is reused when the scene starts again,
    so reset its state in `create()`.

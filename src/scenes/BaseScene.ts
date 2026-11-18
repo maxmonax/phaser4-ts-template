@@ -3,6 +3,7 @@ import { EventBus } from '../events/EventBus';
 import { FrontEvent } from '../events/FrontEvent';
 import { Lang, LocaleKey } from '../locale/LocaleKeys';
 import { LocaleMng, t } from '../locale/LocaleMng';
+import type { CenterCameraPlugin } from '../scaling/CenterCameraPlugin';
 import { Viewport, type Anchor } from '../scaling/Viewport';
 import { tweenAsync, wait } from '../utils/sceneAsync';
 
@@ -15,6 +16,9 @@ type Point = { x: number; y: number };
  * automatically when the scene shuts down.
  */
 export abstract class BaseScene extends Phaser.Scene {
+  /** Keeps the camera on the middle of the full area, see `CenterCameraPlugin`. */
+  declare readonly centerCamera: CenterCameraPlugin;
+
   private _resizeCbs: Array<() => void> = [];
   /** Original callbacks mapped to the bound ones that are registered in LocaleMng. */
   private _langCbs = new Map<LangCallback, LangCallback>();

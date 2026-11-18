@@ -1,6 +1,9 @@
 import * as Phaser from 'phaser';
 import { Config } from '@/data/Config';
+import { EventBus } from '@/events/EventBus';
+import { FrontEvent } from '@/events/FrontEvent';
 import { LocaleMng } from '@/locale/LocaleMng';
+import { Viewport } from '@/scaling/Viewport';
 import { MyContainer } from '../basic/MyContainer';
 import { iconButton } from '../buttons';
 import { fitText } from '../fitText';
@@ -51,6 +54,7 @@ export abstract class Popup<TResult = void> extends MyContainer {
     super(scene, 0, 0);
     this.result = new Promise((resolve) => (this._resolve = resolve));
 
+    // Covers the whole screen, which can be larger than the full area.
     this._shade = new Phaser.GameObjects.Rectangle(
       scene,
       Config.GW_HALF,
@@ -63,6 +67,8 @@ export abstract class Popup<TResult = void> extends MyContainer {
     // Interactive: pointer events do not reach the objects and the scenes below.
     this._shade.setInteractive();
     this.add(this._shade);
+    this.fitShade();
+    EventBus.on(FrontEvent.WINDOW_RESIZE, this.fitShade, this);
 
     this.content = new MyContainer(scene, Config.GW_HALF, Config.GH_HALF);
     this.add(this.content);
@@ -72,7 +78,16 @@ export abstract class Popup<TResult = void> extends MyContainer {
     const locale = LocaleMng.getInstance();
     const onLangChange = () => this.updateTexts();
     locale.onLangChange(onLangChange);
-    this.once(Phaser.GameObjects.Events.DESTROY, () => locale.offLangChange(onLangChange));
+    this.once(Phaser.GameObjects.Events.DESTROY, () => {
+      locale.offLangChange(onLangChange);
+      EventBus.off(FrontEvent.WINDOW_RESIZE, this.fitShade, this);
+    });
+  }
+
+  /** The screen is centered on the full area: only the size changes. */
+  private fitShade(): void {
+    // Also resizes the input area of the shade.
+    this._shade.setSize(Viewport.screen.width, Viewport.screen.height);
   }
 
   /** Called when the language changes while the popup is open: set the texts again. */

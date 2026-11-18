@@ -34,7 +34,10 @@ export type OpenOptions = {
   sdk?: 'mock' | 'missing';
 };
 
-/** Opens the build of a platform from `dist/` and waits for its canvas. */
+/**
+ * Opens the build of a platform from `dist/` and waits for its canvas to be created.
+ * The canvas can be hidden: a phone held the wrong way shows the rotate overlay instead.
+ */
 export async function openGame(
   page: Page,
   platform: PlatformId,
@@ -82,7 +85,7 @@ export async function openGame(
 
   await page.goto(`${ORIGIN}/`);
   const canvas = page.locator('canvas');
-  await canvas.waitFor({ state: 'visible' });
+  await canvas.waitFor({ state: 'attached' });
 
   return {
     problems,

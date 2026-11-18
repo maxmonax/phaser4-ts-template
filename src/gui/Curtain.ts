@@ -1,11 +1,11 @@
 import * as Phaser from 'phaser';
 import { MyContainer } from './basic/MyContainer';
-import { MyGraphics } from './basic/MyGraphics';
 import { Theme } from './Theme';
 
+/** A full-screen fill that fades in and out, e.g. between scenes. Blocks the input below it. */
 export class Curtain extends MyContainer {
   protected _className = 'Curtain';
-  private _curtain: MyGraphics;
+  private _curtain: Phaser.GameObjects.Rectangle;
 
   constructor(aParams: {
     scene: Phaser.Scene;
@@ -17,26 +17,24 @@ export class Curtain extends MyContainer {
   }) {
     super(aParams.scene, aParams.x ?? 0, aParams.y ?? 0);
 
-    this._curtain = new MyGraphics(this.scene, {
-      fillStyle: {
-        color: aParams.color ?? Theme.color.dark,
-      },
-      lineStyle: {
-        alpha: 0,
-      },
-    });
-
-    const size = {
-      w: aParams.w,
-      h: aParams.h,
-    };
-
-    this._curtain.fillRect(-size.w / 2, -size.h / 2, size.w, size.h);
-    const hitArea = new Phaser.Geom.Rectangle(-size.w / 2, -size.h / 2, size.w, size.h);
-    this._curtain.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
+    this._curtain = new Phaser.GameObjects.Rectangle(
+      this.scene,
+      0,
+      0,
+      aParams.w,
+      aParams.h,
+      aParams.color ?? Theme.color.dark
+    );
+    this._curtain.setInteractive();
     this._curtain.visible = false;
 
     this.add(this._curtain);
+  }
+
+  /** Changes the covered area around the curtain position, e.g. when the screen size changes. */
+  resize(w: number, h: number): void {
+    // Also resizes the input area.
+    this._curtain.setSize(w, h);
   }
 
   private _fadeTo(

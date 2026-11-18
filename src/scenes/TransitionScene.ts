@@ -1,7 +1,10 @@
 import * as Phaser from 'phaser';
 import { Config } from '@/data/Config';
+import { EventBus } from '@/events/EventBus';
+import { FrontEvent } from '@/events/FrontEvent';
 import { Curtain } from '@/gui/Curtain';
 import { Theme } from '@/gui/Theme';
+import { Viewport } from '@/scaling/Viewport';
 import { SceneNames } from './SceneNames';
 
 export type TransitionOptions = {
@@ -56,15 +59,21 @@ export class TransitionScene extends Phaser.Scene {
     const duration = data.duration ?? TransitionScene.DEFAULT_DURATION;
     const alpha = data.alpha ?? TransitionScene.DEFAULT_ALPHA;
 
+    // The whole screen, which can be larger than the full area; it is centered on the full area.
     this._curtain = new Curtain({
       scene: this,
       x: Config.GW_HALF,
       y: Config.GH_HALF,
-      w: Config.GW,
-      h: Config.GH,
+      w: Viewport.screen.width,
+      h: Viewport.screen.height,
       color: data.color ?? TransitionScene.DEFAULT_COLOR,
     });
     this.add.existing(this._curtain);
+    const fitCurtain = () => this._curtain.resize(Viewport.screen.width, Viewport.screen.height);
+    EventBus.on(FrontEvent.WINDOW_RESIZE, fitCurtain);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      EventBus.off(FrontEvent.WINDOW_RESIZE, fitCurtain);
+    });
 
     this._curtain.showCurtain({
       alpha,

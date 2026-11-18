@@ -12,7 +12,6 @@ import { Config } from './data/Config';
 import { DevParams } from './data/DevParams';
 import { ErrorOverlay } from './debug/ErrorOverlay';
 import { FpsMeter } from './debug/FpsMeter';
-import { Params } from './data/Params';
 import { BootScene } from './scenes/BootScene';
 import { GameScene } from './scenes/GameScene';
 import { PreloaderScene } from './scenes/PreloaderScene';
@@ -27,7 +26,9 @@ import { bindGamePause } from './pause/bindGamePause';
 import { PauseMng } from './pause/PauseMng';
 import { PlatformMng } from './platform/PlatformMng';
 import { SaveMng } from './save/SaveMng';
+import { CenterCameraPlugin } from './scaling/CenterCameraPlugin';
 import { OrientationAlert } from './scaling/OrientationAlert';
+import { Viewport } from './scaling/Viewport';
 import { loadFonts } from './utils/FontLoader';
 
 const GAME_CONTAINER_ID = 'game';
@@ -39,36 +40,39 @@ function startGame(parent: HTMLElement): Phaser.Game {
     // The canvas is transparent: the page background from main.css shows through.
     transparent: true,
     scale: {
-      mode: Phaser.Scale.HEIGHT_CONTROLS_WIDTH,
+      // The canvas shows the safe area whole and grows by as much as the window allows:
+      // it is always exactly the visible area, nothing off screen is rendered. See Viewport.
+      mode: Phaser.Scale.EXPAND,
       autoCenter: Phaser.Scale.CENTER_BOTH,
-      width: Config.GW,
-      height: Config.GH,
+      width: Config.GW_SAFE,
+      height: Config.GH_SAFE,
+    },
+    plugins: {
+      scene: [
+        // Keeps world coordinates independent of the window, see CenterCameraPlugin.
+        {
+          key: CenterCameraPlugin.KEY,
+          plugin: CenterCameraPlugin,
+          mapping: CenterCameraPlugin.MAPPING,
+        },
+      ],
     },
     // The order is the drawing order: popups above the game, the transition above all.
     scene: [BootScene, PreloaderScene, MenuScene, GameScene, PopupScene, TransitionScene],
   });
 }
 
-function windowResizeCalculate() {
-  const gw = Config.GW;
-  const gh = Config.GH;
-  const ww = window.innerWidth;
-  const wh = window.innerHeight;
-  const scale = wh / gh; // scale by height
-  Params.gameWidth = Math.min(gw, ww / scale);
+/** Keeps `Viewport` in step with the game size and tells the scenes when it changes. */
+function bindViewport(game: Phaser.Game): void {
+  const update = () => {
+    Viewport.setScreenSize(game.scale.width, game.scale.height);
+    EventBus.emit(FrontEvent.WINDOW_RESIZE);
+  };
+  game.scale.on(Phaser.Scale.Events.RESIZE, update);
+  update();
 }
 
-window.addEventListener(
-  'resize',
-  () => {
-    if (Config.ORIENTATION.check) {
-      OrientationAlert.checkOrientation();
-    }
-    windowResizeCalculate();
-    EventBus.emit(FrontEvent.WINDOW_RESIZE);
-  },
-  false
-);
+window.addEventListener('resize', () => OrientationAlert.checkOrientation(), false);
 
 /** Writes pending changes when the player leaves: the tab may never come back. */
 function bindSaveFlush(): void {
@@ -88,12 +92,9 @@ async function boot(): Promise<void> {
     throw new Error(`Game container #${GAME_CONTAINER_ID} not found`);
   }
 
-  if (Config.ORIENTATION.check) {
-    OrientationAlert.initOrientation();
-    OrientationAlert.checkOrientation();
-  }
+  OrientationAlert.initOrientation();
+  OrientationAlert.checkOrientation();
   ShellBridge.init();
-  windowResizeCalculate();
 
   await Promise.all([
     PlatformMng.init({
@@ -115,6 +116,7 @@ async function boot(): Promise<void> {
   locale.onLangChange((lang) => (document.documentElement.lang = lang));
 
   const game = startGame(gameContainer);
+  bindViewport(game);
   bindGamePause(game);
   if (DevParams.debug) FpsMeter.attach(game);
 }
