@@ -6,7 +6,7 @@
 // the menu screen, moves the template's README to TEMPLATE.md and removes itself.
 // The demo round is left in place as a working example: the list of what to delete
 // is in TEMPLATE.md, "Starting a new game".
-import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -78,8 +78,10 @@ if (existsSync(join(root, 'package-lock.json'))) {
 const htmlTitle = title.replaceAll('&', '&amp;').replaceAll('<', '&lt;');
 replaceIn('index.html', /<title>[^<]*<\/title>/, `<title>${htmlTitle}</title>`);
 replaceIn('src/data/Config.ts', /KEY: '[^']*'/, `KEY: '${name}'`);
-for (const locale of ['src/locale/en.ts', 'src/locale/ru.ts']) {
-  replaceIn(locale, /menu_title: (['"]).*\1,/, `menu_title: ${quote(title)},`);
+// One file per language: en.ts, ru.ts, ja.ts...
+const locales = readdirSync(join(root, 'src/locale')).filter((file) => /^[a-z]{2}\.ts$/.test(file));
+for (const locale of locales) {
+  replaceIn(`src/locale/${locale}`, /menu_title: (['"]).*\1,/, `menu_title: ${quote(title)},`);
 }
 
 // The template's README stays as a reference under another name.
@@ -114,5 +116,5 @@ console.log(`
 "${title}" is ready. Next:
   - replace the icons in public/assets/icons/
   - set the game size and orientation in src/data/Config.ts
-  - translate the title in src/locale/ru.ts if it differs
+  - translate the title in src/locale/ if it differs between languages
   - see "Starting a new game" in TEMPLATE.md for the rest, including how to remove the demo`);
