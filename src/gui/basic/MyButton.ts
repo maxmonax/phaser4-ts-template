@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { AudioMng } from '@/audio/AudioMng';
 import { MyContainer } from './MyContainer';
 import { MyImage } from './MyImage';
+import type { AtlasFrame, AtlasKey } from '@/data/Assets';
 import { AudioAlias } from '@/data/AudioData';
 
 export type ButtonAnimConfig = {
@@ -11,8 +12,8 @@ export type ButtonAnimConfig = {
 };
 
 export type MyBtnParams = ButtonAnimConfig & {
-  texture?: string;
-  frame?: string;
+  texture?: AtlasKey;
+  frame?: AtlasFrame;
   size?: {
     w: number;
     h?: number;
@@ -32,7 +33,6 @@ export type MyBtnParams = ButtonAnimConfig & {
 };
 
 const DEFAULT: MyBtnParams = {
-  texture: '',
   scale: 1,
   isHoverAnim: true,
   overDuration: 200,
@@ -66,7 +66,7 @@ export class MyButton extends MyContainer {
     this._dummy.scale = 0.01;
     this.add(this._dummy);
 
-    if (this._params.texture) {
+    if (this._params.texture && this._params.frame) {
       this._img = new MyImage(scene, 0, 0, this._params.texture, this._params.frame);
       this._dummy.add(this._img);
     }

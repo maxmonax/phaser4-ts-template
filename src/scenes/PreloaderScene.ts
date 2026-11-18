@@ -1,3 +1,4 @@
+import { ATLASES } from '@/data/Assets';
 import { AUDIO_LOAD_DATA } from '@/data/AudioData';
 import { Config } from '../data/Config';
 import { PreloaderBar } from '../gui/preloader/PreloaderBar';
@@ -24,9 +25,11 @@ export class PreloaderScene extends BaseScene {
       this.add.existing(this._bar);
     }
 
-    // atlases
+    // atlases: the list is generated from public/assets/atlases (npm run gen:assets)
     this.load.setPath('./assets/atlases/');
-    this.load.atlas('game', 'game.png', 'game.json');
+    for (const key of ATLASES) {
+      this.load.atlas(key, `${key}.png`, `${key}.json`);
+    }
 
     // audio
     this.load.setPath('./assets/audio/');
