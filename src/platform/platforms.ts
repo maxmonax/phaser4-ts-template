@@ -8,6 +8,8 @@
 export const PLATFORMS = {
   /** No portal: own site, itch.io, local development. Ads are simulated in dev builds. */
   web: { sdk: null },
+  /** Yandex Games. The SDK is served by Yandex itself at this relative path. */
+  yandex: { sdk: '/sdk.js' },
 } as const satisfies Record<string, { sdk: string | null }>;
 
 export type PlatformId = keyof typeof PLATFORMS;

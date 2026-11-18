@@ -11,7 +11,10 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:yandex": "vite --mode yandex",
     "build": "tsc --noEmit && vite build",
+    "build:yandex": "tsc --noEmit && vite build --mode yandex",
+    "build:all": "tsc --noEmit && vite build && vite build --mode yandex",
     "preview": "vite preview",
     "zip": "node scripts/zip.mjs",
     "typecheck": "tsc --noEmit",
@@ -29,6 +32,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/ysdk": "^1.2.0",
     "eslint": "^10.15.0",
     "eslint-config-prettier": "^10.1.8",
     "fflate": "^0.8.3",

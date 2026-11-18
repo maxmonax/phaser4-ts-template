@@ -10,6 +10,10 @@ import { WebPlatform } from './web/WebPlatform';
  */
 export async function createPlatform(): Promise<IPlatform> {
   switch (import.meta.env.VITE_PLATFORM) {
+    case 'yandex': {
+      const { YandexPlatform } = await import('./yandex/YandexPlatform');
+      return new YandexPlatform();
+    }
     default:
       return new WebPlatform();
   }
