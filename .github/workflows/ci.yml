@@ -20,3 +20,6 @@ jobs:
       # every platform, and no platform build carries another platform's adapter
       - run: npm run build:all
       - run: npm run check:builds
+      # every build starts in a headless browser, with a mock of its SDK
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

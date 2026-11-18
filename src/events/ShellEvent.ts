@@ -1,5 +1,7 @@
 // Events sent from game to HTML shell (via ShellBridge.dispatch)
 export enum ShellEvent {
+  /** The game is loaded and ready for the player, e.g. to hide a splash screen of the page. */
+  LOADED = 'LOADED',
   SAVE_DATA = 'SAVE_DATA',
 }
 

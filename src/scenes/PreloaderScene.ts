@@ -4,6 +4,7 @@ import { AUDIO_LOAD_DATA } from '@/data/AudioData';
 import { Theme } from '@/gui/Theme';
 import { Config } from '../data/Config';
 import { DevParams } from '../data/DevParams';
+import { ShellBridge } from '../events/ShellBridge';
 import { PreloaderBar } from '../gui/preloader/PreloaderBar';
 import { PlatformMng } from '../platform/PlatformMng';
 import { LogMng } from '../utils/LogMng';
@@ -58,6 +59,7 @@ export class PreloaderScene extends BaseScene {
     LogMng.debug('PreloaderScene create...');
     // Everything is loaded: the player can start playing.
     PlatformMng.loadingFinished();
+    ShellBridge.loaded();
 
     if (Config.PRELOADER.DRAW_DEBUG_BORDER) {
       this.add.rectangle(Config.GW / 2, Config.GH / 2, Config.GW, Config.GH, 0x0, 0.1);

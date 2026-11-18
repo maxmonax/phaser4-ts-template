@@ -39,6 +39,11 @@ export class ShellBridge {
     window.dispatchEvent(new CustomEvent('gameEvent', { detail: { type, ...payload } }));
   }
 
+  /** Tell the shell that the game is loaded. */
+  static loaded(): void {
+    ShellBridge.dispatch(ShellEvent.LOADED);
+  }
+
   /** Notify the shell to persist game data. */
   static saveData(payload?: Record<string, unknown>): void {
     ShellBridge.dispatch(ShellEvent.SAVE_DATA, payload);

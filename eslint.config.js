@@ -5,7 +5,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig(
-  globalIgnores(['dist/', 'coverage/', 'public/']),
+  globalIgnores(['dist/', 'coverage/', 'public/', 'test-results/', 'playwright-report/']),
   js.configs.recommended,
   tseslint.configs.recommended,
   {
@@ -26,8 +26,8 @@ export default defineConfig(
     },
   },
   {
-    // Build scripts run in Node.
-    files: ['scripts/**/*.mjs'],
+    // Build scripts and end-to-end tests run in Node.
+    files: ['scripts/**/*.mjs', 'e2e/**/*.ts', 'playwright.config.ts'],
     languageOptions: {
       globals: globals.node,
     },

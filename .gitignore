@@ -7,8 +7,10 @@ dist/
 # Logs
 *.log
 
-# Test coverage
+# Test coverage and end-to-end test output
 coverage/
+test-results/
+playwright-report/
 
 # Local environment
 .env
