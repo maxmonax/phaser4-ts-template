@@ -7,7 +7,7 @@ import { LogMng } from '../utils/LogMng';
 import { SceneNames } from './SceneNames';
 
 function onShellMute(payload?: { muted?: unknown }): void {
-  AudioMng.setMuted(payload?.muted !== false);
+  AudioMng.setMuted(payload?.muted !== false, 'shell');
 }
 
 /** First scene: one-time setup of game-wide services. Runs once per game. */

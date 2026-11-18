@@ -51,6 +51,17 @@ export type DuckMusicOptions = {
   hold?: number;
 };
 
+/**
+ * Who muted the audio. Sources do not override each other: audio is muted
+ * while at least one of them wants it muted.
+ *
+ * - `user` — the player's sound toggle;
+ * - `pause` — the game is paused (see `PauseMng`);
+ * - `shell` — the host page (`ShellInEvent.MUTE`);
+ * - `platform` — the game portal (e.g. CrazyGames `settings.muteAudio`).
+ */
+export type MuteSource = 'user' | 'pause' | 'shell' | 'platform';
+
 export class AudioMng {
   private static readonly DEFAULT_MUSIC_FADE = 500;
   private static readonly DEFAULT_MUSIC_VOLUME = 1;
@@ -62,7 +73,7 @@ export class AudioMng {
   private static musicEnabled = true;
   private static musicEnabledVolume = 1;
   private static sfxEnabled = true;
-  private static muted = false;
+  private static muteSources = new Set<MuteSource>();
   private static musicVolume = 1;
   private static musicDuckVolume = 1;
   private static sfxVolume = 1;
@@ -87,6 +98,7 @@ export class AudioMng {
     if (AudioMng.game === game) return;
     AudioMng.dispose();
     AudioMng.game = game;
+    game.sound.mute = AudioMng.muteSources.size > 0;
     game.events.on(Phaser.Core.Events.STEP, AudioMng.onGameStep);
     game.events.once(Phaser.Core.Events.DESTROY, AudioMng.dispose);
   }
@@ -360,16 +372,24 @@ export class AudioMng {
     return AudioMng.musicEnabled && AudioMng.sfxEnabled;
   }
 
-  /** Mutes or unmutes all game audio (music and sfx) without stopping it. */
-  static setMuted(muted: boolean): void {
-    AudioMng.muted = muted;
-    AudioMng.getSoundManager().mute = muted;
+  /**
+   * Mutes or unmutes all game audio (music and sfx) without stopping it.
+   * Can be called before `init()`: the state is applied when the game appears.
+   */
+  static setMuted(muted: boolean, source: MuteSource = 'user'): void {
+    if (muted) AudioMng.muteSources.add(source);
+    else AudioMng.muteSources.delete(source);
+    if (AudioMng.game) AudioMng.game.sound.mute = AudioMng.muteSources.size > 0;
   }
 
-  static isMuted(): boolean {
+  /**
+   * With a source: whether that source muted the audio.
+   * Without: whether the audio is muted by any source.
+   */
+  static isMuted(source?: MuteSource): boolean {
     // Kept here on purpose: the sound manager reports the new state
     // only after the audio thread has applied it.
-    return AudioMng.muted;
+    return source ? AudioMng.muteSources.has(source) : AudioMng.muteSources.size > 0;
   }
 
   static playSfx(

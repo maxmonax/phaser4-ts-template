@@ -15,6 +15,7 @@ import { EventBus } from './events/EventBus';
 import { FrontEvent } from './events/FrontEvent';
 import { ShellBridge } from './events/ShellBridge';
 import { detectLang, LocaleMng } from './locale/LocaleMng';
+import { bindGamePause } from './pause/bindGamePause';
 import { OrientationAlert } from './scaling/OrientationAlert';
 import { loadFonts } from './utils/FontLoader';
 
@@ -74,9 +75,7 @@ async function boot(): Promise<void> {
   await loadFonts(Object.values(Config.FONT));
 
   const game = startGame(gameContainer);
-  if (Config.ORIENTATION.check) {
-    OrientationAlert.setGame(game);
-  }
+  bindGamePause(game);
 }
 
 if (document.readyState === 'loading') {
