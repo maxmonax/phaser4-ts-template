@@ -14,6 +14,7 @@ A starter template for browser games built with **Phaser 4**, **TypeScript** and
 | [ESLint](https://eslint.org)                 | 10      | Linting                         |
 | [Prettier](https://prettier.io)              | 3       | Code formatting                 |
 | [Vitest](https://vitest.dev)                 | 5       | Unit tests                      |
+| [Playwright](https://playwright.dev)         | 1.65    | Browser tests of the builds     |
 
 ## Getting started
 
@@ -40,11 +41,14 @@ Open [http://localhost:9100](http://localhost:9100).
 | `npm run check:builds`     | Check that no build contains another platform's adapter                               |
 | `npm run zip`              | Pack every build in `dist/` into a zip for upload                                     |
 | `npm run preview`          | Serve the web build locally (`-- --mode <platform>` for others)                       |
-| `npm run check`            | Type-check, lint, formatting check and unit tests                                     |
+| `npm run check`            | Atlas types, type-check, lint, formatting check and unit tests                        |
 | `npm run typecheck`        | TypeScript type checking                                                              |
 | `npm run lint`             | Run ESLint (`lint:fix` to auto-fix)                                                   |
 | `npm run format`           | Format with Prettier (`format:check` to only check)                                   |
 | `npm test`                 | Run unit tests (`test:watch` for watch mode)                                          |
+| `npm run test:e2e`         | Start every build from `dist/` in a headless browser (run `build:all` first)          |
+| `npm run gen:assets`       | Regenerate the atlas frame types after changing an atlas                              |
+| `npm run init`             | Rename the template into a new game, see [Starting a new game](#starting-a-new-game)  |
 
 ## Project structure
 
@@ -55,24 +59,28 @@ Open [http://localhost:9100](http://localhost:9100).
 │   ├── audio/
 │   ├── icons/
 │   └── images/
+├── raw-assets/          # Source art: the SVG files the demo atlas is packed from
 ├── src/
-│   ├── index.ts         # Entry point: fonts, language, game config
-│   ├── scenes/          # Boot, Preloader, Menu, Game, Transition
-│   ├── gui/             # UI components (buttons, preloader bar, curtain, ad countdown)
+│   ├── index.ts         # Entry point: platform, fonts, saves, language, game config
+│   ├── scenes/          # Boot, Preloader, Menu, Game, Popup, Transition
+│   ├── gui/             # Theme, buttons, popups, preloader bar, curtain, ad countdown
+│   ├── demo/            # The demo round: replace it with your game
 │   ├── platform/        # Game portal adapters (web, Yandex Games, CrazyGames, Poki)
 │   ├── ads/             # Ads for the game code
 │   ├── save/            # Saved game state
 │   ├── pause/           # Pause with reasons (ad, rotate overlay, hidden tab, portal)
-│   ├── audio/           # Audio manager
+│   ├── audio/           # Audio manager, saved sound switches
 │   ├── locale/          # Translations (en, ru)
 │   ├── events/          # Event bus and bridge to the host page
-│   ├── scaling/         # Orientation overlay
-│   ├── data/            # Config, runtime params, audio list
-│   ├── utils/           # Logging, math, state machines, font loading
-│   ├── debug/           # Frame rate overlay
-│   └── styles/          # Page CSS
-├── scripts/             # zip packing, build checks
+│   ├── scaling/         # Visible area, orientation overlay
+│   ├── data/            # Config, runtime params, audio list, atlas frame types
+│   ├── utils/           # Logging, math, state machines, promises, font loading
+│   ├── debug/           # Frame rate and errors on screen
+│   └── styles/          # Page CSS, the background of every scene
+├── scripts/             # zip packing, build checks, atlas types, init
 ├── tests/               # Unit tests
+├── e2e/                 # Browser tests of the builds
+├── AGENTS.md            # Rules and recipes for coding agents
 └── vite.config.ts       # Build and test configuration
 ```
 
@@ -88,19 +96,28 @@ Open [http://localhost:9100](http://localhost:9100).
   a hidden tab, a portal request), so sources do not resume each other.
 - **Scene flow** — Boot → Preloader → Menu → Game, with a curtain transition between scenes
   (`TransitionScene.change(scene, target)`).
-- **UI components** — `MyButton`, `MyTextButton`, `MyText`, `MyImage`, `MyContainer`,
-  `MyGraphics`, `PreloaderBar`, `Curtain`.
+- **One look** — `Theme`: colors, sizes and text styles in one file. Buttons and panels are drawn
+  in code, icons are white and tinted, so a game is restyled without redrawing art. See [UI](#ui).
+- **Popups** — `PopupScene.open()`: a panel over a shade that blocks the input below, stacked
+  popups, a result as a promise. Settings and pause popups are included.
+- **Layout** — fixed-height scaling (2400×1080 with a 1440×1080 safe zone), anchors to the edges
+  of the visible area (`this.anchor(obj, { right: 110, top: 110 })`) and an overlay that asks to
+  rotate the device and pauses the game meanwhile.
+- **Localization** — English and Russian, type-safe keys, plural forms, number formatting,
+  switching at runtime with `LangButton`. See [Localization](#localization).
 - **Audio manager** — `AudioMng`: music with fades, crossfade and ducking, sound effects with
   instance limits, separate music/sfx switches and volumes, global mute. It belongs to the game,
-  not to a scene, so music and fades continue across scene changes.
-- **Localization** — English and Russian, type-safe keys, switching at runtime. The language is
-  the one the player picked in the menu, then the portal's, then the browser's.
-- **Scaling** — fixed-height layout (2400×1080 with a 1440×1080 safe zone) and an overlay that
-  asks to rotate the device and pauses the game meanwhile.
+  not to a scene, so music and fades continue across scene changes. `AudioSettings` keeps the
+  player's switches between sessions.
+- **Typed assets** — the frame names of the atlases are types: a typo is a compile error.
+- **Demo round** — a small playable game in `src/demo` that uses all of the above: round states
+  on an `FSM`, a pause popup over the paused scene, ads at the breaks, a saved best score.
+- **Promises for scenes** — `this.wait(ms)` and `this.tween(config)` on the scene clock.
 - **Shell bridge** — typed events between the game and the page that hosts it.
 - **State machines** — `FSM` and `StackFSM`.
 - **Logging** — `LogMng`: warnings and errors in every build, verbose output in dev builds.
 - **Bundled fonts** — web fonts ship with the game; no requests to external servers.
+- **Tests** — unit tests of the engine-independent logic, browser tests that start every build.
 - **Path alias** — `@/` points to `src/`.
 
 ## Platforms
@@ -132,7 +149,7 @@ await AdMng.showInterstitial(); // at a natural break; the demo: before every ro
 if (await AdMng.showRewarded()) giveReward();
 if (!AdMng.isAvailable()) hideRewardButtons();
 
-SaveMng.set('coins', SaveMng.get('coins') + 10); // fields are declared in src/save/SaveData.ts
+SaveMng.set('best', score); // fields are declared in src/save/SaveData.ts
 ```
 
 Gameplay is reported to the portal only while the game is not paused: during an ad, with a hidden
@@ -161,34 +178,120 @@ tab or with the rotate overlay the portal gets `gameplayStop`, and `gameplayStar
 to `PLATFORMS` in `src/platform/platforms.ts`, add a branch to `createPlatform()`, the scripts to
 `package.json` and the SDK global to `scripts/check-builds.mjs`.
 
+## UI
+
+**Theme.** `src/gui/Theme.ts` holds the palette, the button skins, the text styles and the sizes.
+The UI is drawn from these values and the atlas icons are white, so changing the theme restyles
+the whole game. The background of every scene is the page background in `src/styles/main.css`:
+the canvas is transparent, and the background costs nothing to render.
+
+**Buttons:**
+
+```ts
+// a round button with an icon, pinned to the corner of the visible area
+const btnPause = iconButton(this, 'icons/pause', this.onPauseClick, this);
+this.add.existing(btnPause);
+this.anchor(btnPause, { left: 110, top: 110 });
+
+// a button with a caption and an icon; a long caption is scaled down to fit
+const btnPlay = textButton(this, this.t('btn_play'), this.onPlayClick, this, {
+  width: 580,
+  skin: Theme.skin.primary,
+  icon: 'icons/play',
+});
+```
+
+`ToggleButton` is an on/off switch, `LangButton` cycles the languages. Rounded shapes come from
+`gui/shapes.ts`: they are drawn once into a texture (a `Graphics` object is tessellated again on
+every frame).
+
+**Popups** live in their own scene above the game, so a popup keeps working while the scene that
+opened it is paused:
+
+```ts
+this.scene.pause(); // update(), timers and tweens of the game scene stop
+const answer = await PopupScene.open(this, PausePopup); // 'resume' | 'menu'
+this.scene.resume();
+```
+
+To make a popup, extend `Popup<Result>`: add objects to `this.content`, call `this.close(result)`.
+`allowDismiss(result)` adds a close button and closes the popup on a tap outside of it.
+
+**Layout.** Coordinates are in a 2400×1080 space. The game is scaled by height, so the visible
+width changes with the window: only the middle 1440 px are always on screen. Keep the gameplay
+there and pin the rest to the edges with `this.anchor()`; `Viewport` gives the visible edges.
+
+## Localization
+
+Texts are in `src/locale/`. English is the reference: a key is added to `en.ts` first, and the
+compiler asks for it in every other locale.
+
+```ts
+this.t('demo_best', { count: 5 }); // 'Best: 5 orbs'
+LocaleMng.getInstance().formatNumber(1234567); // '1,234,567' or '1 234 567'
+this.registerLangChange(this.updateTexts); // texts follow the language switch
+```
+
+- **Parameters** — `{name}` in a string is replaced by the parameter `name`.
+- **Plural forms** — `{count|orb|orbs}` picks a form by the number in `count`. The forms go in the
+  order of the language's plural categories: two for English, three for Russian
+  (`{count|шар|шара|шаров}`).
+- **The language** is the one the player picked (`LangButton` saves it), then the portal's, then
+  the browser's, then English.
+- **Long translations** — `fitText(text, maxWidth)` scales a text down to fit; buttons do it
+  themselves.
+
+**Adding a language:** add its code to `LANGS` in `src/locale/LocaleKeys.ts` and follow the
+compiler: a name in `LANG_NAMES`, a locale file listed in `LocaleMng.ts`. Then import the font
+subset with its letters in `src/index.ts` and add a sample letter to `SAMPLE_TEXT` in
+`src/utils/FontLoader.ts`.
+
 ## Assets
 
-Everything in `public/` is copied to the build unchanged and is loaded at runtime by path, for
-example `this.load.atlas('game', 'game.png', 'game.json')` in `PreloaderScene`.
+Everything in `public/` is copied to the build unchanged and is loaded at runtime by path.
 
 - **Atlases** — pack sprites with [TexturePacker](https://www.codeandweb.com/texturepacker) or
-  [Free Texture Packer](https://free-tex-packer.com) using the Phaser JSON format and put the
-  result into `public/assets/atlases/`.
-- **Source art** — keep unpacked images and packer project files in a top-level `raw-assets/`
-  folder. Only `public/` gets into the build.
+  [Free Texture Packer](https://free-tex-packer.com) using a Phaser JSON format and put the
+  result into `public/assets/atlases/`, then run `npm run gen:assets`. Every atlas in that folder
+  is loaded by `PreloaderScene`, and its frame names become the `AtlasFrame` type.
+- **Source art** — unpacked images and packer project files live in `raw-assets/`. Only `public/`
+  gets into the build. The demo atlas is packed from the SVG files in `raw-assets/atlas/`: icons
+  are 120 px, white, and tinted in code.
 - **Audio** — put files into `public/assets/audio/` and list them in `src/data/AudioData.ts`.
+  The demo sounds and the music loop are synthesized placeholders: replace them.
 - **Fonts** — fonts come from [Fontsource](https://fontsource.org) packages. To change the font:
-  install the package, import its CSS in `src/index.ts` and set the family in
-  `Config.FONT` (`src/data/Config.ts`). Every family listed there is loaded before the game starts.
+  install the package, import its CSS in `src/index.ts` (one file per script and weight) and set
+  the family and the weights in `Config.FONT` and `Config.FONT_WEIGHTS` (`src/data/Config.ts`).
+  They are loaded before the game starts.
 
 ## Starting a new game
 
-1. Set `name` and `description` in `package.json`, `<title>` in `index.html` and the save key
-   `Config.SAVE.KEY` in `src/data/Config.ts`.
+1. Run `npm run init -- my-game "My Game"`. It sets the package name, the page title, the save
+   key (`Config.SAVE.KEY`) and the title on the menu screen, and moves this file to `TEMPLATE.md`.
 2. Replace the icons in `public/assets/icons/`.
-3. Set the game size and orientation in `src/data/Config.ts`.
-4. Replace the demo atlas and sounds, then build your scenes on top of `BaseScene`.
+3. Set the game size and orientation in `src/data/Config.ts`, the colors in `src/gui/Theme.ts`
+   and `src/styles/main.css`.
+4. Build your game in place of the demo round. `GameScene` shows how a round uses the template
+   (states, pause, ads, saves): rewrite it, and when the demo is no longer needed remove
+   - `src/demo/` and `tests/demo/`;
+   - the `demo_*` keys in `src/locale/`;
+   - the `best` field in `src/save/SaveData.ts` and its test;
+   - the demo sounds in `src/data/AudioData.ts` and `public/assets/audio/`;
+   - the sprites `orb`, `orb-shine`, `ring` and `dot` in the atlas (then `npm run gen:assets`).
+
+   The compiler points at everything that still uses them.
 5. Add texts to `src/locale/`: new keys go to `en.ts` first, the other locales must translate them.
 
 ## Development notes
 
 - **Debug mode** — add `#debug` to the URL, e.g. `http://localhost:9100/#debug`: verbose logs
-  (dev builds only) and a frame rate overlay (any build, so it works in a portal draft too).
+  (dev builds only), a frame rate overlay and errors on screen (any build, so they work on a phone
+  and in a portal draft too).
+- **Open a scene directly** — `http://localhost:9100/?scene=GameScene` skips the menu (dev builds).
+- **Browser tests** — `npm run build:all && npm run test:e2e` starts every build in headless
+  Chromium with a mock of its SDK (`e2e/mocks/`): no errors, no requests to other servers, the
+  portal gets "loading finished" once. Before the first run: `npx playwright install chromium`.
+- **Coding agents** — `AGENTS.md` lists the rules of the code base and recipes for common changes.
 - **Phaser import** — import Phaser explicitly in every module that uses it:
   `import * as Phaser from 'phaser'`. There is no global `Phaser` object in the production
   build; a lint rule guards this.
@@ -197,7 +300,7 @@ example `this.load.atlas('game', 'game.png', 'game.json')` in `PreloaderScene`.
   ```js
   // page → game
   window.dispatchEvent(new CustomEvent('shellEvent', { detail: { type: 'MUTE', muted: true } }));
-  // game → page
+  // game → page: 'LOADED' when the game is ready for the player
   window.addEventListener('gameEvent', (e) => console.log(e.detail.type));
   ```
 
