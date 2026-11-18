@@ -5,6 +5,7 @@ import '@fontsource/ubuntu/cyrillic-400.css';
 import './styles/main.css';
 import * as Phaser from 'phaser';
 import { AudioMng } from './audio/AudioMng';
+import { AudioSettings } from './audio/AudioSettings';
 import { Config } from './data/Config';
 import { DevParams } from './data/DevParams';
 import { FpsMeter } from './debug/FpsMeter';
@@ -95,6 +96,7 @@ async function boot(): Promise<void> {
   ]);
   await SaveMng.init(await PlatformMng.createStorage(Config.SAVE.KEY), Config.SAVE.DELAY_MS);
   bindSaveFlush();
+  AudioSettings.apply();
 
   // The language the player picked in the menu wins, then the platform, then the browser.
   const langs = [SaveMng.get('lang'), PlatformMng.getLang(), ...navigator.languages];

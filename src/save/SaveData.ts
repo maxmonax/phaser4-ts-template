@@ -9,12 +9,18 @@ import type { SaveRecord } from './ISaveStorage';
 export type SaveData = {
   /** Language picked by the player in the menu; `null` until the player picks one. */
   lang: string | null;
+  /** Sound effects switch, see `AudioSettings`. */
+  sfx: boolean;
+  /** Music switch, see `AudioSettings`. */
+  music: boolean;
   /** Demo progress value, see `GameScene`. */
   coins: number;
 };
 
 export const DEFAULT_SAVE: Readonly<SaveData> = {
   lang: null,
+  sfx: true,
+  music: true,
   coins: 0,
 };
 
@@ -28,6 +34,8 @@ export function parseSave(raw: SaveRecord | null): SaveData {
   if (!raw) return data;
 
   if (typeof raw.lang === 'string') data.lang = raw.lang;
+  if (typeof raw.sfx === 'boolean') data.sfx = raw.sfx;
+  if (typeof raw.music === 'boolean') data.music = raw.music;
   if (typeof raw.coins === 'number' && Number.isFinite(raw.coins)) data.coins = raw.coins;
 
   return data;

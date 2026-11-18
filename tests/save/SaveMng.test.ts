@@ -32,10 +32,16 @@ describe('parseSave', () => {
   });
 
   it('keeps valid fields and replaces invalid ones with defaults', () => {
-    expect(parseSave({ lang: 'ru', coins: 'many', extra: 1 })).toEqual({
+    expect(parseSave({ lang: 'ru', sfx: 'off', music: false, extra: 1 })).toEqual({
+      ...DEFAULT_SAVE,
       lang: 'ru',
-      coins: DEFAULT_SAVE.coins,
+      music: false,
     });
+  });
+
+  it('checks the demo field', () => {
+    expect(parseSave({ coins: 5 }).coins).toBe(5);
+    expect(parseSave({ coins: 'many' }).coins).toBe(DEFAULT_SAVE.coins);
     expect(parseSave({ coins: Number.NaN }).coins).toBe(DEFAULT_SAVE.coins);
   });
 });
@@ -52,10 +58,11 @@ describe('SaveMng', () => {
   });
 
   it('loads the saved state', async () => {
-    await SaveMng.init(new FakeStorage({ lang: 'ru', coins: 5 }));
+    await SaveMng.init(new FakeStorage({ lang: 'ru', music: false }));
 
     expect(SaveMng.get('lang')).toBe('ru');
-    expect(SaveMng.get('coins')).toBe(5);
+    expect(SaveMng.get('music')).toBe(false);
+    expect(SaveMng.get('sfx')).toBe(DEFAULT_SAVE.sfx);
   });
 
   it('starts with defaults when loading fails', async () => {
@@ -64,28 +71,28 @@ describe('SaveMng', () => {
 
     await SaveMng.init(storage);
 
-    expect(SaveMng.get('coins')).toBe(DEFAULT_SAVE.coins);
+    expect(SaveMng.get('lang')).toBe(DEFAULT_SAVE.lang);
   });
 
   it('writes once, after the last change', async () => {
     const storage = new FakeStorage();
     await SaveMng.init(storage, 1000);
 
-    SaveMng.set('coins', 1);
+    SaveMng.set('lang', 'en');
     await vi.advanceTimersByTimeAsync(500);
-    SaveMng.set('coins', 2);
+    SaveMng.set('lang', 'ru');
     await vi.advanceTimersByTimeAsync(999);
     expect(storage.writes).toHaveLength(0);
 
     await vi.advanceTimersByTimeAsync(1);
-    expect(storage.writes).toEqual([{ data: { lang: null, coins: 2 }, flush: false }]);
+    expect(storage.writes).toEqual([{ data: { ...DEFAULT_SAVE, lang: 'ru' }, flush: false }]);
   });
 
   it('does not write when the value did not change', async () => {
-    const storage = new FakeStorage({ coins: 3 });
+    const storage = new FakeStorage({ lang: 'ru' });
     await SaveMng.init(storage);
 
-    SaveMng.set('coins', 3);
+    SaveMng.set('lang', 'ru');
     await vi.runAllTimersAsync();
 
     expect(storage.writes).toHaveLength(0);
@@ -98,7 +105,7 @@ describe('SaveMng', () => {
     SaveMng.set('lang', 'en');
     await SaveMng.flush();
 
-    expect(storage.writes).toEqual([{ data: { lang: 'en', coins: 0 }, flush: true }]);
+    expect(storage.writes).toEqual([{ data: { ...DEFAULT_SAVE, lang: 'en' }, flush: true }]);
     await vi.runAllTimersAsync();
     expect(storage.writes).toHaveLength(1); // the scheduled write was cancelled
   });
@@ -108,11 +115,11 @@ describe('SaveMng', () => {
     await SaveMng.init(storage);
     storage.failNextWrite = true;
 
-    SaveMng.set('coins', 7);
+    SaveMng.set('sfx', false);
     await SaveMng.flush();
     expect(storage.writes).toHaveLength(0);
 
     await SaveMng.flush();
-    expect(storage.saved).toEqual({ lang: null, coins: 7 });
+    expect(storage.saved).toEqual({ ...DEFAULT_SAVE, sfx: false });
   });
 });
