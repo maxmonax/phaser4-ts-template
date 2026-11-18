@@ -12,9 +12,11 @@
   "scripts": {
     "dev": "vite",
     "dev:yandex": "vite --mode yandex",
+    "dev:crazygames": "vite --mode crazygames",
     "build": "tsc --noEmit && vite build",
     "build:yandex": "tsc --noEmit && vite build --mode yandex",
-    "build:all": "tsc --noEmit && vite build && vite build --mode yandex",
+    "build:crazygames": "tsc --noEmit && vite build --mode crazygames",
+    "build:all": "tsc --noEmit && vite build && vite build --mode yandex && vite build --mode crazygames",
     "preview": "vite preview",
     "zip": "node scripts/zip.mjs",
     "typecheck": "tsc --noEmit",

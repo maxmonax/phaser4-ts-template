@@ -10,6 +10,8 @@ export const PLATFORMS = {
   web: { sdk: null },
   /** Yandex Games. The SDK is served by Yandex itself at this relative path. */
   yandex: { sdk: '/sdk.js' },
+  /** CrazyGames, HTML5 SDK v3. */
+  crazygames: { sdk: 'https://sdk.crazygames.com/crazygames-sdk-v3.js' },
 } as const satisfies Record<string, { sdk: string | null }>;
 
 export type PlatformId = keyof typeof PLATFORMS;

@@ -14,6 +14,10 @@ export async function createPlatform(): Promise<IPlatform> {
       const { YandexPlatform } = await import('./yandex/YandexPlatform');
       return new YandexPlatform();
     }
+    case 'crazygames': {
+      const { CrazyGamesPlatform } = await import('./crazygames/CrazyGamesPlatform');
+      return new CrazyGamesPlatform();
+    }
     default:
       return new WebPlatform();
   }
