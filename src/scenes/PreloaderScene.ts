@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { ATLASES } from '@/data/Assets';
 import { AUDIO_LOAD_DATA } from '@/data/AudioData';
+import { fitText } from '@/gui/fitText';
 import { Theme } from '@/gui/Theme';
 import { Config } from '../data/Config';
 import { DevParams } from '../data/DevParams';
@@ -22,7 +23,10 @@ export class PreloaderScene extends BaseScene {
 
   public preload(): void {
     if (Config.PRELOADER.BAR) {
-      this._bar = new PreloaderBar(this, Config.GW_HALF, Config.GH_HALF + 170);
+      this._bar = new PreloaderBar(this, Config.GW_HALF, Config.GH_HALF + 170, {
+        // Narrower on a portrait screen.
+        width: Math.min(640, Config.GW_SAFE - 200),
+      });
       this.add.existing(this._bar);
     }
 
@@ -92,7 +96,7 @@ export class PreloaderScene extends BaseScene {
    * the menu music starts right away.
    */
   private showTapToStart(): void {
-    this.add
+    const title = this.add
       .text(Config.GW_HALF, Config.GH_HALF - 90, this.t('menu_title'), Theme.text.title)
       .setOrigin(0.5);
 
@@ -100,6 +104,9 @@ export class PreloaderScene extends BaseScene {
       .text(Config.GW_HALF, Config.GH_HALF + 170, this.t('preloader_start'), Theme.text.body)
       .setOrigin(0.5)
       .setAlpha(0);
+    // The safe area is always on screen, a portrait one is narrow.
+    fitText(title, Config.GW_SAFE - 120);
+    fitText(hint, Config.GW_SAFE - 120);
     if (this._bar) this.tweens.add({ targets: this._bar, alpha: 0, duration: 250 });
     this.tweens.add({
       targets: hint,

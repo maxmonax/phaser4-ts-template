@@ -55,13 +55,6 @@ Remove an item when it is done; add one when you find a limitation.
 
 ## Known limitations
 
-- **Layouts are for landscape only.** The scaling supports `ORIENTATION: 'portrait'` and `'any'`
-  (checked by canvas sizes and the rotate overlay), but the demo menu and the popups (settings,
-  pause, result, language list) are laid out for the landscape safe area, 1440×1080. In a portrait
-  game the visible width of a phone can be as small as the safe area, e.g. 646 game pixels at a
-  height of 1400. The popups are 760–904 game pixels wide: their edges and the close button end
-  up off screen, and the menu title is cut. A portrait game needs its own sizes for them, or
-  popups that scale down to the visible width.
 - **The canvas can be larger than the full area.** On a screen wider or taller than the full area
   the canvas covers the whole window, and the part beyond the full area is rendered transparent.
   Phaser's `scale.max` cannot limit it: Phaser applies `max` both to the canvas size and to its

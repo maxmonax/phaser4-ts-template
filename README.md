@@ -259,7 +259,11 @@ area the widest:
 - portrait, 1400 high: safe 9:19.5 (a phone) `GW_SAFE = 646`, full 3:4 (a tablet) `GW = 1050`,
   `GH = GH_SAFE = 1400`, `ORIENTATION: 'portrait'`;
 - both orientations (`'any'`): a square safe area, e.g. 1080×1080, keeps the same scale either
-  way; the layout follows `Viewport.isPortrait`. The demo is laid out for landscape only.
+  way; the layout follows `Viewport.isPortrait`.
+
+The demo works with all three: the menu is laid out from the middle of the screen, its texts fit
+the safe area width (`fitText()`), the popups scale down, and the HUD of the round moves below the
+pause button when the safe area is narrow.
 
 A full area taller than the safe area (`GH > GH_SAFE`) lets tall phones show more in portrait.
 `Config.PRELOADER.DRAW_DEBUG_BORDER` shades both areas on the preloader screen.

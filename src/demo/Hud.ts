@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { Config } from '@/data/Config';
 import { MyContainer } from '@/gui/basic/MyContainer';
 import { MyImage } from '@/gui/basic/MyImage';
 import { panelTexture } from '@/gui/shapes';
@@ -7,6 +8,13 @@ import { LocaleMng } from '@/locale/LocaleMng';
 
 const WIDTH = 600;
 const HEIGHT = 116;
+
+/**
+ * Where the HUD is anchored, from the top edge of the screen. The pause button needs about
+ * 1000 px of the safe area width beside the HUD: a narrower one (a portrait game) puts the HUD
+ * one row lower.
+ */
+export const HUD_TOP = Config.GW_SAFE >= 1000 ? 110 : 250;
 const ICON_SIZE = 64;
 /** The timer changes its color and pulses when this many seconds are left. */
 const HURRY_SECONDS = 3;

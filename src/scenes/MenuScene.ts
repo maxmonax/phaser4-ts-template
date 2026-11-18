@@ -17,6 +17,8 @@ import { SceneNames } from './SceneNames';
 import { TransitionScene } from './TransitionScene';
 
 const MUSIC_VOLUME = 0.5;
+/** The texts stay inside the safe area, which is always on screen. */
+const TEXT_WIDTH = Config.GW_SAFE - 120;
 
 export class MenuScene extends BaseScene {
   private _title!: Phaser.GameObjects.Text;
@@ -32,8 +34,11 @@ export class MenuScene extends BaseScene {
   public create(): void {
     this._starting = false;
 
-    this._title = this.add.text(Config.GW_HALF, 270, '', Theme.text.title).setOrigin(0.5);
-    this._subtitle = this.add.text(Config.GW_HALF, 410, '', Theme.text.body).setOrigin(0.5);
+    // Laid out from the middle of the screen: it works in landscape and in portrait.
+    const x = Config.GW_HALF;
+    const y = Config.GH_HALF;
+    this._title = this.add.text(x, y - 270, '', Theme.text.title).setOrigin(0.5);
+    this._subtitle = this.add.text(x, y - 130, '', Theme.text.body).setOrigin(0.5);
 
     this._btnPlay = textButton(this, '', this.onPlayBtnClick, this, {
       width: 580,
@@ -41,9 +46,9 @@ export class MenuScene extends BaseScene {
       skin: Theme.skin.primary,
       icon: 'icons/play',
     });
-    this.add.existing(this._btnPlay.setPosition(Config.GW_HALF, 650));
+    this.add.existing(this._btnPlay.setPosition(x, y + 110));
 
-    this._best = this.add.text(Config.GW_HALF, 850, '', Theme.text.body).setOrigin(0.5);
+    this._best = this.add.text(x, y + 310, '', Theme.text.body).setOrigin(0.5);
 
     // The corner of the visible area, whatever the window width is.
     const btnSettings = iconButton(this, 'icons/settings', this.onSettingsClick, this);
@@ -65,12 +70,13 @@ export class MenuScene extends BaseScene {
   private updateTexts(): void {
     this._title.setText(this.t('menu_title'));
     this._subtitle.setText(this.t('demo_subtitle', { seconds: ROUND_SECONDS }));
-    // A translation may be longer than the original: keep it inside the safe zone.
-    fitText(this._subtitle, Config.GW_SAFE - 120);
     this._btnPlay.setText(this.t('btn_play'));
 
     const best = SaveMng.get('best');
     this._best.setText(best > 0 ? this.t('demo_best', { count: best }) : '');
+
+    // A translation may be longer than the original, a portrait screen is narrow.
+    for (const text of [this._title, this._subtitle, this._best]) fitText(text, TEXT_WIDTH);
   }
 
   private onSettingsClick(): void {

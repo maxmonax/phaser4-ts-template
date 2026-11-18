@@ -4,15 +4,17 @@ import { MyContainer } from '@/gui/basic/MyContainer';
 import { Theme } from '@/gui/Theme';
 import { MyMath } from '@/utils/MyMath';
 import { MyUtils } from '@/utils/MyUtils';
+import { HUD_TOP } from './Hud';
 import { Orb, ORB_SIZE, OrbEvent } from './Orb';
 import type { Round } from './Round';
 
-/** Orbs appear inside the safe zone, so they are reachable at any window width. */
+/** Orbs appear inside the safe area below the HUD, so they are reachable on any screen. */
+const AREA_TOP = HUD_TOP + 160;
 const AREA = new Phaser.Geom.Rectangle(
   Config.GW_HALF - Config.GW_SAFE / 2 + 130,
-  270,
+  Config.GH_HALF - Config.GH_SAFE / 2 + AREA_TOP,
   Config.GW_SAFE - 260,
-  Config.GH - 270 - 130
+  Config.GH_SAFE - AREA_TOP - 130
 );
 const MIN_DISTANCE = ORB_SIZE * 1.15;
 const PLACE_ATTEMPTS = 12;

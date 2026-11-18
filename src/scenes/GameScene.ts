@@ -3,7 +3,7 @@ import { AdMng } from '@/ads/AdMng';
 import { AudioMng } from '@/audio/AudioMng';
 import { AudioAlias } from '@/data/AudioData';
 import { popBurst } from '@/demo/effects';
-import { Hud } from '@/demo/Hud';
+import { Hud, HUD_TOP } from '@/demo/Hud';
 import type { Orb } from '@/demo/Orb';
 import { OrbField } from '@/demo/OrbField';
 import { ResultPopup } from '@/demo/ResultPopup';
@@ -59,7 +59,7 @@ export class GameScene extends BaseScene {
 
     this._hud = new Hud(this);
     this.add.existing(this._hud);
-    this.anchor(this._hud, { centerX: 0, top: 110 });
+    this.anchor(this._hud, { centerX: 0, top: HUD_TOP });
 
     this._btnPause = iconButton(this, 'icons/pause', this.onPauseClick, this);
     this.add.existing(this._btnPause);
