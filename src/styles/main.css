@@ -1,0 +1,43 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  border: none;
+  font-family: 'Segoe UI', sans-serif;
+  background: rgb(128, 165, 255);
+  background: radial-gradient(circle, rgba(128, 165, 255, 1) 0%, rgba(0, 53, 255, 1) 100%);
+  /* No text selection, no long-press menu, no double-tap zoom */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+#game {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.rotate-image-container {
+  display: none;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  color: white;
+}
+
+#rotate__image {
+  width: 60%;
+  max-width: 200px;
+}

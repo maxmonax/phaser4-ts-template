@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link type="image/png" sizes="16x16" rel="icon" href="/assets/icons/game-16.png" />
+    <link type="image/png" sizes="32x32" rel="icon" href="/assets/icons/game-32.png" />
+    <link type="image/png" sizes="96x96" rel="icon" href="/assets/icons/game-96.png" />
+    <title>Phaser 4 - Game Template</title>
+
+    <script>
+      document.addEventListener(
+        'touchstart',
+        function (event) {
+          if (event.touches.length > 1) event.preventDefault();
+        },
+        { passive: false }
+      );
+      document.addEventListener('gesturestart', function (event) {
+        event.preventDefault();
+      });
+      document.addEventListener('contextmenu', function (event) {
+        event.preventDefault();
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="game"></div>
+    <div class="rotate-image-container">
+      <img
+        id="rotate__image"
+        src="/assets/images/rotate-phone-icon-white.png"
+        alt="Rotate device to landscape orientation"
+      />
+    </div>
+    <noscript>
+      <p>You need javascript enabled in order to use this web application.</p>
+    </noscript>
+    <script type="module" src="/src/index.ts"></script>
+  </body>
+</html>
