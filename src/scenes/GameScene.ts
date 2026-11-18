@@ -6,7 +6,6 @@ import { MyTextButton } from '@/gui/basic/MyTextButton';
 import { PlatformMng } from '@/platform/PlatformMng';
 import { SaveMng } from '@/save/SaveMng';
 import { Config } from '../data/Config';
-import { Params } from '../data/Params';
 import { BaseScene } from './BaseScene';
 import { SceneNames } from './SceneNames';
 import { TransitionScene } from './TransitionScene';
@@ -32,13 +31,14 @@ export class GameScene extends BaseScene {
     this._dummyGui = new MyContainer(this, 0, 0);
     this.add.existing(this._dummyGui);
 
-    this._btnBack = new MyButton(this, 0, 80, {
+    this._btnBack = new MyButton(this, 0, 0, {
       texture: 'game',
       frame: 'btnBack',
       onClick: this.onBackClick,
       context: this,
     });
     this.add.existing(this._btnBack);
+    this.anchor(this._btnBack, { left: 90, top: 80 });
 
     const scoreText = new Phaser.GameObjects.Text(
       this,
@@ -68,8 +68,6 @@ export class GameScene extends BaseScene {
     // this.input.on('dragend', this.onDragEnd, this);
 
     this.registerLangChange(this.updateTexts);
-    this.registerResize(this.onResize);
-    this.onResize();
 
     // The round starts right away; tell the platform when it ends.
     PlatformMng.gameplayStart();
@@ -118,16 +116,6 @@ export class GameScene extends BaseScene {
       this.updateTexts();
     }
     this._btnReward.disabled = false;
-  }
-
-  private onResize() {
-    this.updateBtnBackPos();
-  }
-
-  private updateBtnBackPos() {
-    if (this._btnBack) {
-      this._btnBack.x = (Config.GW - Params.gameWidth) / 2 + 90;
-    }
   }
 
   private onBackClick() {
