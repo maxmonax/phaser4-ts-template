@@ -1,96 +1,86 @@
 import * as Phaser from 'phaser';
-import { AdMng } from '@/ads/AdMng';
-import { MyButton } from '@/gui/basic/MyButton';
-import { MyTextButton } from '@/gui/basic/MyTextButton';
+import { AudioMng } from '@/audio/AudioMng';
+import { AudioAlias } from '@/data/AudioData';
+import { roundBreak } from '@/demo/roundBreak';
+import { ROUND_SECONDS } from '@/demo/roundConfig';
+import type { MyTextButton } from '@/gui/basic/MyTextButton';
+import { iconButton, textButton } from '@/gui/buttons';
+import { fitText } from '@/gui/fitText';
+import { LangButton } from '@/gui/LangButton';
+import { SettingsPopup } from '@/gui/popup/SettingsPopup';
+import { Theme } from '@/gui/Theme';
 import { Config } from '../data/Config';
-import { LANG_NAMES, type Lang } from '../locale/LocaleKeys';
-import { LocaleMng } from '../locale/LocaleMng';
 import { SaveMng } from '../save/SaveMng';
-import { LogMng } from '../utils/LogMng';
 import { BaseScene } from './BaseScene';
+import { PopupScene } from './PopupScene';
 import { SceneNames } from './SceneNames';
 import { TransitionScene } from './TransitionScene';
 
+const MUSIC_VOLUME = 0.5;
+
 export class MenuScene extends BaseScene {
-  /** Rounds started in this session. */
-  private static _roundsStarted = 0;
-  private _dummyMain!: Phaser.GameObjects.Container;
-  private _btnPlay!: MyButton;
   private _title!: Phaser.GameObjects.Text;
-  private _btnLang!: MyTextButton;
+  private _subtitle!: Phaser.GameObjects.Text;
+  private _best!: Phaser.GameObjects.Text;
+  private _btnPlay!: MyTextButton;
   private _starting = false;
 
   constructor() {
     super(SceneNames.MenuScene);
   }
 
-  public init(_aData: unknown) {}
-
-  public preload(): void {}
-
   public create(): void {
     this._starting = false;
-    this._dummyMain = this.add.container(0, 0);
 
-    this._title = this.add
-      .text(Config.GW_HALF, Config.GH_HALF - 400, this.t('menu_title'), {
-        fontFamily: Config.FONT.MAIN,
-        fontSize: '80px',
-        color: '#ffffff',
-      })
-      .setOrigin(0.5);
-    this._dummyMain.add(this._title);
+    this._title = this.add.text(Config.GW_HALF, 270, '', Theme.text.title).setOrigin(0.5);
+    this._subtitle = this.add.text(Config.GW_HALF, 410, '', Theme.text.body).setOrigin(0.5);
 
-    this._btnPlay = new MyButton(this, Config.GW_HALF, Config.GH_HALF, {
-      texture: 'game',
-      frame: 'btnPlay',
-      onClick: this.onPlayBtnClick,
-      context: this,
+    this._btnPlay = textButton(this, '', this.onPlayBtnClick, this, {
+      width: 580,
+      height: 170,
+      skin: Theme.skin.primary,
+      icon: 'icons/play',
     });
-    this._dummyMain.add(this._btnPlay);
+    this.add.existing(this._btnPlay.setPosition(Config.GW_HALF, 650));
 
-    this._btnLang = new MyTextButton(this, Config.GW_HALF, Config.GH_HALF + 400, {
-      size: { w: 360, h: 80 },
-      onClick: this.onLangBtnClick,
-      context: this,
-    });
-    this._btnLang.setText(LANG_NAMES[LocaleMng.getInstance().getLang()]);
-    this._dummyMain.add(this._btnLang);
+    this._best = this.add.text(Config.GW_HALF, 850, '', Theme.text.body).setOrigin(0.5);
 
-    this.registerLangChange(this.onLangChange);
-    this.events.once('shutdown', this.onSceneShutdown, this);
+    // The corner of the visible area, whatever the window width is.
+    const btnSettings = iconButton(this, 'icons/settings', this.onSettingsClick, this);
+    this.add.existing(btnSettings);
+    this.anchor(btnSettings, { right: 110, top: 110 });
 
-    this.registerResize(this.onResize);
-    this.onResize();
+    // The language switch: every text on screen follows it, see updateTexts().
+    const btnLang = new LangButton(this);
+    this.add.existing(btnLang);
+    this.anchor(btnLang, { right: 410, top: 110 });
+
+    this.registerLangChange(this.updateTexts);
+    this.updateTexts();
+
+    // Starts the music on the first visit and keeps it playing on the next ones.
+    AudioMng.playMusic(AudioAlias.Music, { volume: MUSIC_VOLUME, fadeDuration: 800 });
   }
 
-  private onLangChange(lang: Lang): void {
+  private updateTexts(): void {
     this._title.setText(this.t('menu_title'));
-    this._btnLang.setText(LANG_NAMES[lang]);
+    this._subtitle.setText(this.t('demo_subtitle', { seconds: ROUND_SECONDS }));
+    // A translation may be longer than the original: keep it inside the safe zone.
+    fitText(this._subtitle, Config.GW_SAFE - 120);
+    this._btnPlay.setText(this.t('btn_play'));
+
+    const best = SaveMng.get('best');
+    this._best.setText(best > 0 ? this.t('demo_best', { count: best }) : '');
   }
 
-  private onLangBtnClick(): void {
-    const next = LocaleMng.getInstance().nextLang();
-    LocaleMng.getInstance().setLang(next);
-    SaveMng.set('lang', next);
+  private onSettingsClick(): void {
+    void PopupScene.open(this, SettingsPopup);
   }
-
-  private onResize() {
-    this.updateLayout();
-  }
-
-  private updateLayout() {}
 
   private async onPlayBtnClick() {
     if (this._starting) return;
     this._starting = true;
-    // An ad break before every round except the first one: what Poki asks for,
-    // and a natural break on other platforms.
-    if (MenuScene._roundsStarted++ > 0) await AdMng.showInterstitial();
+    await roundBreak();
     TransitionScene.change(this, SceneNames.GameScene);
-  }
-
-  private onSceneShutdown() {
-    LogMng.debug(`${SceneNames.MenuScene}: onSceneShutdown()...`);
   }
 }

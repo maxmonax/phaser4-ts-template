@@ -34,6 +34,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   public create(): void {
+    // Runs all the time, above the game scenes: see PopupScene.
+    this.scene.launch(SceneNames.PopupScene);
     this.scene.start(SceneNames.PreloaderScene);
   }
 }

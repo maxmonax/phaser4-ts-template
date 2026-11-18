@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { MyContainer } from './basic/MyContainer';
 import { MyGraphics } from './basic/MyGraphics';
+import { Theme } from './Theme';
 
 export class Curtain extends MyContainer {
   protected _className = 'Curtain';
@@ -18,7 +19,7 @@ export class Curtain extends MyContainer {
 
     this._curtain = new MyGraphics(this.scene, {
       fillStyle: {
-        color: aParams.color ?? 0x111111,
+        color: aParams.color ?? Theme.color.dark,
       },
       lineStyle: {
         alpha: 0,

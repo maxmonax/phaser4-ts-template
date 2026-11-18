@@ -2,12 +2,7 @@ import * as Phaser from 'phaser';
 import { Config } from '@/data/Config';
 import { t } from '@/locale/LocaleMng';
 import { MyContainer } from './basic/MyContainer';
-
-const STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
-  fontFamily: Config.FONT.MAIN,
-  color: '#dddddd',
-  align: 'center',
-};
+import { cssColor, Theme } from './Theme';
 
 /**
  * "Ad in 3… 2… 1…" countdown before an interstitial. Optional: use it where the
@@ -29,11 +24,14 @@ export class AdShower extends MyContainer {
   constructor(scene: Phaser.Scene, x = Config.GW_HALF, y = Config.GH_HALF) {
     super(scene, x, y);
 
-    this._title = new Phaser.GameObjects.Text(scene, 0, -70, '', { ...STYLE, fontSize: '70px' });
+    this._title = new Phaser.GameObjects.Text(scene, 0, -80, '', Theme.text.heading);
     this._title.setOrigin(0.5);
     this.add(this._title);
 
-    this._counter = new Phaser.GameObjects.Text(scene, 0, 60, '', { ...STYLE, fontSize: '120px' });
+    this._counter = new Phaser.GameObjects.Text(scene, 0, 60, '', {
+      ...Theme.text.title,
+      color: cssColor(Theme.color.accent),
+    });
     this._counter.setOrigin(0.5);
     this.add(this._counter);
 

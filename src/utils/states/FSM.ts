@@ -5,7 +5,7 @@ interface IState {
   context?: unknown;
   userData?: unknown;
   onEnter?: (...args: unknown[]) => void;
-  onUpdate?: (...args: unknown[]) => void;
+  onUpdate?: (dt: number, userData: unknown) => void;
   onExit?: (...args: unknown[]) => void;
 }
 
@@ -24,7 +24,7 @@ export class FSM {
     aName: string,
     aContext?: unknown,
     aEnter?: (...args: unknown[]) => void,
-    aUpdate?: (...args: unknown[]) => void,
+    aUpdate?: (dt: number, userData: unknown) => void,
     aExit?: (...args: unknown[]) => void
   ): FSM | undefined {
     if (this.stateList.has(aName)) {

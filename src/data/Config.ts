@@ -25,6 +25,8 @@ export const Config = {
   FONT: {
     MAIN: 'Ubuntu',
   },
+  /** Font weights the game uses. Each one needs its CSS import in index.ts. */
+  FONT_WEIGHTS: [400, 700],
 
   SAVE: {
     /** Storage key of the game state. Make it unique for every game on the same site. */

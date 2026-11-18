@@ -3,5 +3,6 @@ export enum SceneNames {
   PreloaderScene = 'PreloaderScene',
   MenuScene = 'MenuScene',
   GameScene = 'GameScene',
+  PopupScene = 'PopupScene',
   TransitionScene = 'TransitionScene',
 }

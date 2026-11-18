@@ -13,15 +13,15 @@ export type SaveData = {
   sfx: boolean;
   /** Music switch, see `AudioSettings`. */
   music: boolean;
-  /** Demo progress value, see `GameScene`. */
-  coins: number;
+  /** Best score of the demo round, see `GameScene`. */
+  best: number;
 };
 
 export const DEFAULT_SAVE: Readonly<SaveData> = {
   lang: null,
   sfx: true,
   music: true,
-  coins: 0,
+  best: 0,
 };
 
 /**
@@ -36,7 +36,7 @@ export function parseSave(raw: SaveRecord | null): SaveData {
   if (typeof raw.lang === 'string') data.lang = raw.lang;
   if (typeof raw.sfx === 'boolean') data.sfx = raw.sfx;
   if (typeof raw.music === 'boolean') data.music = raw.music;
-  if (typeof raw.coins === 'number' && Number.isFinite(raw.coins)) data.coins = raw.coins;
+  if (typeof raw.best === 'number' && Number.isFinite(raw.best)) data.best = raw.best;
 
   return data;
 }

@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { Config } from '@/data/Config';
 import { Curtain } from '@/gui/Curtain';
+import { Theme } from '@/gui/Theme';
 import { SceneNames } from './SceneNames';
 
 export type TransitionOptions = {
@@ -19,7 +20,7 @@ type TransitionData = TransitionOptions & {
 
 export class TransitionScene extends Phaser.Scene {
   private static readonly DEFAULT_DURATION = 300;
-  private static readonly DEFAULT_COLOR = 0x111111;
+  private static readonly DEFAULT_COLOR = Theme.color.dark;
   private static readonly DEFAULT_ALPHA = 1;
 
   private static _isTransitioning = false;

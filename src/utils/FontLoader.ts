@@ -14,11 +14,17 @@ const SAMPLE_TEXT = 'Abc Абв 123';
  *
  * Never rejects: on failure or timeout the game starts with fallback fonts.
  */
-export async function loadFonts(families: readonly string[], timeoutMs = 3000): Promise<void> {
+export async function loadFonts(
+  families: readonly string[],
+  weights: readonly number[] = [400],
+  timeoutMs = 3000
+): Promise<void> {
   if (!document.fonts) return;
 
   const loading = Promise.all(
-    families.map((family) => document.fonts.load(`16px "${family}"`, SAMPLE_TEXT))
+    families.flatMap((family) =>
+      weights.map((weight) => document.fonts.load(`${weight} 16px "${family}"`, SAMPLE_TEXT))
+    )
   );
   const timeout = new Promise<'timeout'>((resolve) => setTimeout(resolve, timeoutMs, 'timeout'));
 

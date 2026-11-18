@@ -1,9 +1,11 @@
 import * as Phaser from 'phaser';
 import { AudioMng } from '@/audio/AudioMng';
-import { MyContainer } from './MyContainer';
-import { MyImage } from './MyImage';
 import type { AtlasFrame, AtlasKey } from '@/data/Assets';
 import { AudioAlias } from '@/data/AudioData';
+import { skinTexture } from '../shapes';
+import { Theme, type ButtonSkin } from '../Theme';
+import { MyContainer } from './MyContainer';
+import { MyImage } from './MyImage';
 
 export type ButtonAnimConfig = {
   overDuration?: number;
@@ -12,8 +14,16 @@ export type ButtonAnimConfig = {
 };
 
 export type MyBtnParams = ButtonAnimConfig & {
+  /** Atlas image: the whole button, or an icon on top of `skin`. */
   texture?: AtlasKey;
   frame?: AtlasFrame;
+  /** Height of the image in game pixels. By default the image keeps its size. */
+  imageSize?: number;
+  imageTint?: number;
+  /** Drawn background: a rounded rectangle with a darker lower edge. Needs `size`. */
+  skin?: ButtonSkin;
+  /** Corner radius of the skin. */
+  radius?: number;
   size?: {
     w: number;
     h?: number;
@@ -47,11 +57,18 @@ export enum MyBtnEvent {
   Click = 'Click',
 }
 
+/**
+ * A button: an atlas image, a drawn background (`skin`), or an icon on a drawn background.
+ * For the common cases see the helpers in `gui/buttons.ts`.
+ */
 export class MyButton extends MyContainer {
   protected _className = 'MyButton';
   private _params: MyBtnParams;
+  /** Everything visible is inside: it is scaled by the hover and click animations. */
   protected _dummy: MyContainer;
-  protected _img!: MyImage;
+  protected _img?: MyImage;
+  private _bg?: Phaser.GameObjects.Image;
+  private _size: { w: number; h: number };
   private _tweenOver?: Phaser.Tweens.Tween;
   private _isOver = false;
   private _isDown = false;
@@ -68,22 +85,29 @@ export class MyButton extends MyContainer {
 
     if (this._params.texture && this._params.frame) {
       this._img = new MyImage(scene, 0, 0, this._params.texture, this._params.frame);
+      if (this._params.imageSize) this._img.setScale(this._params.imageSize / this._img.height);
+      if (this._params.imageTint !== undefined) this._img.setTint(this._params.imageTint);
       this._dummy.add(this._img);
     }
 
-    if (!this._params.size) {
-      const scale = this._params.scale ?? 1;
-      this._params.size = this._img
-        ? { w: this._img.width * scale, h: this._img.height * scale }
-        : { w: 0, h: 0 };
-    }
-    if (!this._params.size.h) this._params.size.h = this._params.size.w;
+    const scale = this._params.scale ?? 1;
+    const imgSize = this._img
+      ? { w: this._img.displayWidth * scale, h: this._img.displayHeight * scale }
+      : { w: 0, h: 0 };
+    const w = this._params.size?.w ?? imgSize.w;
+    this._size = { w, h: this._params.size?.h ?? (this._params.size ? w : imgSize.h) };
+    this.drawSkin();
 
-    const size = this._params.size;
-    const sizeH = size.h ?? size.w;
+    // The lower edge of the skin is a part of the button.
+    const lip = this._params.skin ? Theme.lip : 0;
     const pos = this._params.interactivePos ?? { x: 0, y: 0 };
     this.setInteractive({
-      hitArea: new Phaser.Geom.Rectangle(-size.w / 2 + pos.x, -sizeH / 2 + pos.y, size.w, sizeH),
+      hitArea: new Phaser.Geom.Rectangle(
+        -this._size.w / 2 + pos.x,
+        -this._size.h / 2 + pos.y,
+        this._size.w,
+        this._size.h + lip
+      ),
       hitAreaCallback: Phaser.Geom.Rectangle.Contains,
       useHandCursor: true,
     });
@@ -100,6 +124,23 @@ export class MyButton extends MyContainer {
       duration: this._params.overDuration,
       ease: 'Circ.Out',
     });
+  }
+
+  private drawSkin(): void {
+    const skin = this._params.skin;
+    if (!skin) return;
+
+    const { w, h } = this._size;
+    const radius = this._params.radius ?? Theme.radius.button;
+    const texture = skinTexture(this.scene, w, h, radius, skin);
+    if (this._bg) {
+      this._bg.setTexture(texture);
+    } else {
+      this._bg = new Phaser.GameObjects.Image(this.scene, 0, 0, texture);
+      // The texture is higher than the button by its lower edge: the body stays centered.
+      this._bg.setOrigin(0.5, h / 2 / (h + Theme.lip));
+      this._dummy.addAt(this._bg, 0);
+    }
   }
 
   private overAnim() {
@@ -185,6 +226,11 @@ export class MyButton extends MyContainer {
     return this._disabled;
   }
 
+  /** Size of the button without the hover and click animations. */
+  public get size(): Readonly<{ w: number; h: number }> {
+    return this._size;
+  }
+
   setClickListener(aCb: (btn: MyButton) => void, aCtx: object) {
     this._params.onClick = aCb;
     this._params.context = aCtx;
@@ -193,5 +239,19 @@ export class MyButton extends MyContainer {
   setNewScale(aScale: number) {
     this._params.scale = aScale;
     this._dummy.setScale(this._params.scale);
+  }
+
+  /** Changes the image of the button to another frame of the same atlas. */
+  setFrame(frame: AtlasFrame): this {
+    this._img?.setFrame(frame);
+    return this;
+  }
+
+  /** Changes the colors of the drawn background and tints the image with the skin's ink. */
+  setSkin(skin: ButtonSkin): this {
+    this._params.skin = skin;
+    this.drawSkin();
+    this._img?.setTint(skin.ink);
+    return this;
   }
 }

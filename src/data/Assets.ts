@@ -8,14 +8,26 @@ export type AtlasKey = (typeof ATLASES)[number];
 /** Frame names of every atlas. */
 export type AtlasFrames = {
   game:
-    | 'btnBack'
-    | 'btnBook'
-    | 'btnClose'
-    | 'btnHelp'
-    | 'btnPlay'
-    | 'btnRestart'
-    | 'hand'
-    | 'particles/dot';
+    | 'dot'
+    | 'icons/back'
+    | 'icons/clock'
+    | 'icons/close'
+    | 'icons/globe'
+    | 'icons/home'
+    | 'icons/music-off'
+    | 'icons/music-on'
+    | 'icons/pause'
+    | 'icons/play'
+    | 'icons/restart'
+    | 'icons/settings'
+    | 'icons/sound-off'
+    | 'icons/sound-on'
+    | 'icons/star'
+    | 'icons/trophy'
+    | 'icons/video'
+    | 'orb'
+    | 'orb-shine'
+    | 'ring';
 };
 
 /** A frame of any atlas. */

@@ -1,11 +1,10 @@
 import * as Phaser from 'phaser';
+import { Theme } from '../Theme';
 
 export type PreloaderBarConfig = {
   width?: number;
   height?: number;
-  /** Thickness of the frame around the bar. */
-  border?: number;
-  borderColor?: number;
+  trackColor?: number;
   fillColor?: number;
 };
 
@@ -23,18 +22,17 @@ export class PreloaderBar extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, x: number, y: number, config: PreloaderBarConfig = {}) {
     super(scene, x, y);
 
-    const border = config.border ?? 4;
-    this._barWidth = config.width ?? 600;
-    this._barHeight = config.height ?? 50;
-    this._fillColor = config.fillColor ?? 0xffffff;
+    this._barWidth = config.width ?? 640;
+    this._barHeight = config.height ?? 36;
+    this._fillColor = config.fillColor ?? Theme.color.accent;
 
     const w = this._barWidth;
     const h = this._barHeight;
 
-    const frame = new Phaser.GameObjects.Graphics(scene);
-    frame.lineStyle(border, config.borderColor ?? 0xffffff, 1);
-    frame.strokeRect(-w / 2 - border, -h / 2 - border, w + border * 2, h + border * 2);
-    this.add(frame);
+    const track = new Phaser.GameObjects.Graphics(scene);
+    track.fillStyle(config.trackColor ?? Theme.color.track, 1);
+    track.fillRoundedRect(-w / 2, -h / 2, w, h, h / 2);
+    this.add(track);
 
     this._fill = new Phaser.GameObjects.Graphics(scene);
     this.add(this._fill);
@@ -51,9 +49,10 @@ export class PreloaderBar extends Phaser.GameObjects.Container {
     this._fill.clear();
     if (this._progress <= 0) return;
 
-    const w = this._barWidth;
     const h = this._barHeight;
+    // Never narrower than a circle: the rounded ends need that much room.
+    const w = Math.max(this._barWidth * this._progress, h);
     this._fill.fillStyle(this._fillColor, 1);
-    this._fill.fillRect(-w / 2, -h / 2, w * this._progress, h);
+    this._fill.fillRoundedRect(-this._barWidth / 2, -h / 2, w, h, h / 2);
   }
 }

@@ -1,126 +1,188 @@
 import * as Phaser from 'phaser';
 import { AdMng } from '@/ads/AdMng';
-import { MyButton } from '@/gui/basic/MyButton';
-import { MyContainer } from '@/gui/basic/MyContainer';
-import { MyTextButton } from '@/gui/basic/MyTextButton';
+import { AudioMng } from '@/audio/AudioMng';
+import { AudioAlias } from '@/data/AudioData';
+import { popBurst } from '@/demo/effects';
+import { Hud } from '@/demo/Hud';
+import type { Orb } from '@/demo/Orb';
+import { OrbField } from '@/demo/OrbField';
+import { ResultPopup } from '@/demo/ResultPopup';
+import { Round } from '@/demo/Round';
+import { roundBreak } from '@/demo/roundBreak';
+import { CONTINUE_SECONDS, ROUND_CONFIG } from '@/demo/roundConfig';
+import type { MyButton } from '@/gui/basic/MyButton';
+import { iconButton } from '@/gui/buttons';
+import { PausePopup } from '@/gui/popup/PausePopup';
 import { PlatformMng } from '@/platform/PlatformMng';
 import { SaveMng } from '@/save/SaveMng';
-import { Config } from '../data/Config';
+import { FSM } from '@/utils/states/FSM';
 import { BaseScene } from './BaseScene';
+import { PopupScene } from './PopupScene';
 import { SceneNames } from './SceneNames';
 import { TransitionScene } from './TransitionScene';
 
-const REWARD_COINS = 10;
+enum State {
+  Play = 'Play',
+  Pause = 'Pause',
+  Result = 'Result',
+}
 
+/** The timer ticks aloud when this many seconds are left. */
+const TICK_SECONDS = 3;
+
+/**
+ * Demo round: pop the orbs before the time is out. The game itself is in `src/demo`;
+ * the scene shows how a round talks to the rest of the template:
+ *
+ * - the states of the round are an `FSM`: play → pause → play → result;
+ * - the pause is a popup over the paused scene (`this.scene.pause()`);
+ * - the portal knows when the player is in gameplay (`PlatformMng.gameplayStart/Stop`);
+ * - ads at the breaks: an interstitial between rounds, a rewarded ad for extra time;
+ * - the best score is saved with `SaveMng`.
+ */
 export class GameScene extends BaseScene {
-  private _dummyGame!: MyContainer;
-  private _dummyGui!: MyContainer;
-  // GUI
-  private _btnBack!: MyButton;
-  private _coinsText!: Phaser.GameObjects.Text;
-  private _btnReward?: MyTextButton;
+  private _fsm!: FSM;
+  private _round!: Round;
+  private _field!: OrbField;
+  private _hud!: Hud;
+  private _btnPause!: MyButton;
+  private _lastTick = 0;
 
   constructor() {
     super(SceneNames.GameScene);
   }
 
   public create(): void {
-    this._dummyGame = new MyContainer(this, 0, 0);
-    this.add.existing(this._dummyGame);
+    this._round = new Round(ROUND_CONFIG);
+    this._field = new OrbField(this, this._round, (orb) => this.onOrbPop(orb));
+    this.add.existing(this._field);
 
-    this._dummyGui = new MyContainer(this, 0, 0);
-    this.add.existing(this._dummyGui);
+    this._hud = new Hud(this);
+    this.add.existing(this._hud);
+    this.anchor(this._hud, { centerX: 0, top: 110 });
 
-    this._btnBack = new MyButton(this, 0, 0, {
-      texture: 'game',
-      frame: 'btnBack',
-      onClick: this.onBackClick,
-      context: this,
+    this._btnPause = iconButton(this, 'icons/pause', this.onPauseClick, this);
+    this.add.existing(this._btnPause);
+    this.anchor(this._btnPause, { left: 110, top: 110 });
+
+    this._fsm = new FSM();
+    this._fsm.addState(State.Play, this, this.enterPlay, this.updatePlay, this.exitPlay);
+    this._fsm.addState(State.Pause, this, this.enterPause);
+    this._fsm.addState(State.Result, this, this.enterResult);
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      PlatformMng.gameplayStop();
+      this._fsm.free();
     });
-    this.add.existing(this._btnBack);
-    this.anchor(this._btnBack, { left: 90, top: 80 });
 
-    const scoreText = new Phaser.GameObjects.Text(
-      this,
-      Config.GW / 2,
-      Config.GH_HALF,
-      'Game Screen\nCustom web font',
-      {
-        fontFamily: Config.FONT.MAIN,
-        color: '#ffffff',
-        align: 'center',
-      }
-    )
-      .setFontSize(80)
-      .setOrigin(0.5, 0.5);
-    this.add.existing(scoreText);
+    this.startRound();
+  }
 
-    this.createRewardDemo();
+  update(_time: number, dtMs: number): void {
+    this._fsm.update(dtMs);
+  }
 
-    // poiter events example
-    // this.input.on('pointerdown', this.onPointerDown, this);
-    // this.input.on('pointermove', this.onPointerMove, this);
-    // this.input.on('pointerup', this.onPointerUp, this);
+  private startRound(): void {
+    this._round.reset();
+    this._lastTick = 0;
+    this.refreshHud();
+    this._fsm.startState(State.Play);
+  }
 
-    // drag n drop events example
-    // this.input.on('dragstart', this.onDragStart, this);
-    // this.input.on('drag', this.onDrag, this);
-    // this.input.on('dragend', this.onDragEnd, this);
+  private refreshHud(): void {
+    this._hud.setTime(this._round.secondsLeft);
+    this._hud.setScore(this._round.score);
+  }
 
-    this.registerLangChange(this.updateTexts);
+  // --- Play ----------------------------------------------------------------
 
-    // The round starts right away; tell the platform when it ends.
+  private enterPlay(): void {
+    this._btnPause.disabled = false;
+    this._field.start();
     PlatformMng.gameplayStart();
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => PlatformMng.gameplayStop());
   }
 
-  /** Demo of a rewarded ad and of the saved state: coins survive a page reload. */
-  private createRewardDemo(): void {
-    this._coinsText = this.add
-      .text(Config.GW_HALF, Config.GH - 260, '', {
-        fontFamily: Config.FONT.MAIN,
-        fontSize: '50px',
-        color: '#ffffff',
-      })
-      .setOrigin(0.5);
+  private updatePlay(dtMs: number): void {
+    this._round.tick(dtMs);
 
-    // Without ads (e.g. a web release build) the button makes no sense.
-    this._btnReward = undefined;
-    if (AdMng.isAvailable()) {
-      this._btnReward = new MyTextButton(
-        this,
-        Config.GW_HALF,
-        Config.GH - 150,
-        { size: { w: 480, h: 90 }, onClick: this.onRewardClick, context: this },
-        { fontSize: '50px' }
-      );
-      this.add.existing(this._btnReward);
+    const seconds = this._round.secondsLeft;
+    this._hud.setTime(seconds);
+    if (seconds <= TICK_SECONDS && seconds > 0 && seconds !== this._lastTick) {
+      this._lastTick = seconds;
+      AudioMng.playSfx(AudioAlias.Tick);
     }
 
-    this.updateTexts();
+    if (this._round.isOver) this._fsm.startState(State.Result);
   }
 
-  private updateTexts(): void {
-    this._coinsText.setText(this.t('game_coins', { coins: SaveMng.get('coins') }));
-    this._btnReward?.setText(this.t('game_reward_btn'));
+  private exitPlay(): void {
+    this._btnPause.disabled = true;
+    PlatformMng.gameplayStop();
   }
 
-  private async onRewardClick() {
-    if (!this._btnReward) return;
-    this._btnReward.disabled = true;
-    const rewarded = await AdMng.showRewarded();
-    // The scene may have been left while the ad was on screen.
-    if (!this.scene.isActive()) return;
-    if (rewarded) {
-      SaveMng.set('coins', SaveMng.get('coins') + REWARD_COINS);
-      this.updateTexts();
+  private onOrbPop(orb: Orb): void {
+    this._round.addScore();
+    this._hud.setScore(this._round.score);
+    popBurst(this, this._field, orb.x, orb.y, orb.color, 1);
+    AudioMng.playSfx(AudioAlias.Pop);
+  }
+
+  // --- Pause ---------------------------------------------------------------
+
+  private onPauseClick(): void {
+    this._fsm.startState(State.Pause);
+  }
+
+  private enterPause(): void {
+    void this.runPause();
+  }
+
+  private async runPause(): Promise<void> {
+    // Everything of this scene stops: update(), the timers of the field, the tweens.
+    // The popup lives in its own scene and keeps working.
+    this.scene.pause();
+    const answer = await PopupScene.open(this, PausePopup);
+    if (answer === 'menu') {
+      // The scene stays frozen under the curtain.
+      TransitionScene.change(this, SceneNames.MenuScene);
+      return;
     }
-    this._btnReward.disabled = false;
+    this.scene.resume();
+    this._fsm.startState(State.Play);
   }
 
-  private onBackClick() {
-    TransitionScene.change(this, SceneNames.MenuScene);
+  // --- Result --------------------------------------------------------------
+
+  private enterResult(): void {
+    void this.runResult();
   }
 
-  update(_allTime: number, _dtMs: number) {}
+  private async runResult(): Promise<void> {
+    this._field.stop();
+
+    const score = this._round.score;
+    const isRecord = score > SaveMng.get('best');
+    if (isRecord) SaveMng.set('best', score);
+
+    AudioMng.duckMusic({ volume: 0.3, hold: 1200 });
+    AudioMng.playSfx(AudioAlias.RoundEnd);
+
+    const answer = await PopupScene.open(this, ResultPopup, {
+      score,
+      best: SaveMng.get('best'),
+      isRecord,
+      canContinue: !this._round.extended && AdMng.isAvailable(),
+      continueSeconds: CONTINUE_SECONDS,
+    });
+
+    if (answer === 'continue') {
+      this._round.extend(CONTINUE_SECONDS * 1000);
+      this._fsm.startState(State.Play);
+    } else if (answer === 'again') {
+      await roundBreak();
+      this.startRound();
+    } else {
+      TransitionScene.change(this, SceneNames.MenuScene);
+    }
+  }
 }

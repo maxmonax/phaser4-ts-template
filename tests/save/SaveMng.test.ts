@@ -40,9 +40,9 @@ describe('parseSave', () => {
   });
 
   it('checks the demo field', () => {
-    expect(parseSave({ coins: 5 }).coins).toBe(5);
-    expect(parseSave({ coins: 'many' }).coins).toBe(DEFAULT_SAVE.coins);
-    expect(parseSave({ coins: Number.NaN }).coins).toBe(DEFAULT_SAVE.coins);
+    expect(parseSave({ best: 5 }).best).toBe(5);
+    expect(parseSave({ best: 'many' }).best).toBe(DEFAULT_SAVE.best);
+    expect(parseSave({ best: Number.NaN }).best).toBe(DEFAULT_SAVE.best);
   });
 });
 

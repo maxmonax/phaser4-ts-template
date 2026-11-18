@@ -1,7 +1,9 @@
 // Web fonts are bundled with the game: no requests to external servers.
 // One file per script; add more subsets here when you add languages.
 import '@fontsource/ubuntu/latin-400.css';
+import '@fontsource/ubuntu/latin-700.css';
 import '@fontsource/ubuntu/cyrillic-400.css';
+import '@fontsource/ubuntu/cyrillic-700.css';
 import './styles/main.css';
 import * as Phaser from 'phaser';
 import { AudioMng } from './audio/AudioMng';
@@ -14,6 +16,7 @@ import { BootScene } from './scenes/BootScene';
 import { GameScene } from './scenes/GameScene';
 import { PreloaderScene } from './scenes/PreloaderScene';
 import { MenuScene } from './scenes/MenuScene';
+import { PopupScene } from './scenes/PopupScene';
 import { TransitionScene } from './scenes/TransitionScene';
 import { EventBus } from './events/EventBus';
 import { FrontEvent } from './events/FrontEvent';
@@ -40,7 +43,8 @@ function startGame(parent: HTMLElement): Phaser.Game {
       width: Config.GW,
       height: Config.GH,
     },
-    scene: [BootScene, PreloaderScene, MenuScene, GameScene, TransitionScene],
+    // The order is the drawing order: popups above the game, the transition above all.
+    scene: [BootScene, PreloaderScene, MenuScene, GameScene, PopupScene, TransitionScene],
   });
 }
 
@@ -92,7 +96,7 @@ async function boot(): Promise<void> {
       setPaused: (paused) => PauseMng.set('platform', paused),
       setMuted: (muted) => AudioMng.setMuted(muted, 'platform'),
     }),
-    loadFonts(Object.values(Config.FONT)),
+    loadFonts(Object.values(Config.FONT), Config.FONT_WEIGHTS),
   ]);
   await SaveMng.init(await PlatformMng.createStorage(Config.SAVE.KEY), Config.SAVE.DELAY_MS);
   bindSaveFlush();
