@@ -4,6 +4,7 @@ import '@fontsource/ubuntu/latin-400.css';
 import '@fontsource/ubuntu/cyrillic-400.css';
 import './styles/main.css';
 import * as Phaser from 'phaser';
+import { AudioMng } from './audio/AudioMng';
 import { Config } from './data/Config';
 import { DevParams } from './data/DevParams';
 import { FpsMeter } from './debug/FpsMeter';
@@ -18,7 +19,8 @@ import { FrontEvent } from './events/FrontEvent';
 import { ShellBridge } from './events/ShellBridge';
 import { detectLang, LocaleMng } from './locale/LocaleMng';
 import { bindGamePause } from './pause/bindGamePause';
-import { KeyValueSaveStorage } from './save/KeyValueSaveStorage';
+import { PauseMng } from './pause/PauseMng';
+import { PlatformMng } from './platform/PlatformMng';
 import { SaveMng } from './save/SaveMng';
 import { OrientationAlert } from './scaling/OrientationAlert';
 import { loadFonts } from './utils/FontLoader';
@@ -85,16 +87,18 @@ async function boot(): Promise<void> {
   windowResizeCalculate();
 
   await Promise.all([
-    SaveMng.init(KeyValueSaveStorage.local(Config.SAVE.KEY), Config.SAVE.DELAY_MS),
+    PlatformMng.init({
+      setPaused: (paused) => PauseMng.set('platform', paused),
+      setMuted: (muted) => AudioMng.setMuted(muted, 'platform'),
+    }),
     loadFonts(Object.values(Config.FONT)),
   ]);
+  await SaveMng.init(await PlatformMng.createStorage(Config.SAVE.KEY), Config.SAVE.DELAY_MS);
   bindSaveFlush();
 
-  // The language the player picked earlier wins over the browser settings.
-  const savedLang = SaveMng.get('lang');
-  LocaleMng.getInstance().setLang(
-    detectLang(savedLang ? [savedLang, ...navigator.languages] : navigator.languages)
-  );
+  // The language the player picked in the menu wins, then the platform, then the browser.
+  const langs = [SaveMng.get('lang'), PlatformMng.getLang(), ...navigator.languages];
+  LocaleMng.getInstance().setLang(detectLang(langs.filter((lang) => lang !== null)));
 
   const game = startGame(gameContainer);
   bindGamePause(game);

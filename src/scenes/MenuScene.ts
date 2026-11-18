@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { AdMng } from '@/ads/AdMng';
 import { MyButton } from '@/gui/basic/MyButton';
 import { MyTextButton } from '@/gui/basic/MyTextButton';
 import { Config } from '../data/Config';
@@ -11,10 +12,13 @@ import { SceneNames } from './SceneNames';
 import { TransitionScene } from './TransitionScene';
 
 export class MenuScene extends BaseScene {
+  /** Rounds started in this session. */
+  private static _roundsStarted = 0;
   private _dummyMain!: Phaser.GameObjects.Container;
   private _btnPlay!: MyButton;
   private _title!: Phaser.GameObjects.Text;
   private _btnLang!: MyTextButton;
+  private _starting = false;
 
   constructor() {
     super(SceneNames.MenuScene);
@@ -25,6 +29,7 @@ export class MenuScene extends BaseScene {
   public preload(): void {}
 
   public create(): void {
+    this._starting = false;
     this._dummyMain = this.add.container(0, 0);
 
     this._title = this.add
@@ -77,7 +82,12 @@ export class MenuScene extends BaseScene {
 
   private updateLayout() {}
 
-  private onPlayBtnClick() {
+  private async onPlayBtnClick() {
+    if (this._starting) return;
+    this._starting = true;
+    // An ad break before every round except the first one: what Poki asks for,
+    // and a natural break on other platforms.
+    if (MenuScene._roundsStarted++ > 0) await AdMng.showInterstitial();
     TransitionScene.change(this, SceneNames.GameScene);
   }
 

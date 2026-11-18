@@ -25,6 +25,13 @@ export default defineConfig(
       ],
     },
   },
+  {
+    // Build scripts run in Node.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
   // Turns off formatting rules that would conflict with Prettier. Keep it last.
   prettier
 );

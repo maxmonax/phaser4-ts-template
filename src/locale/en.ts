@@ -4,4 +4,7 @@ export const en = {
   preloader_start: 'Click anywhere to start',
   menu_title: 'Main Menu',
   menu_lang_btn: 'EN',
+  game_coins: 'Coins: {coins}',
+  game_reward_btn: '+10 for an ad',
+  ad_soon: 'Ad in',
 } satisfies Record<string, string>;

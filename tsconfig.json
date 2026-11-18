@@ -15,6 +15,9 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "noEmit": true,
+    // vite.config.ts imports src/platform/platforms.ts with its extension,
+    // as Vite's native config loader requires.
+    "allowImportingTsExtensions": true,
     "paths": {
       "@/*": ["./src/*"]
     }
