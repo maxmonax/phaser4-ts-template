@@ -21,6 +21,7 @@
     "build:all": "tsc --noEmit && vite build && vite build --mode yandex && vite build --mode crazygames && vite build --mode poki",
     "check:builds": "node scripts/check-builds.mjs",
     "gen:assets": "node scripts/gen-assets.mjs",
+    "init": "node scripts/init.mjs",
     "preview": "vite preview",
     "zip": "node scripts/zip.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p e2e",
