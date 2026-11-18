@@ -18,6 +18,10 @@ export async function createPlatform(): Promise<IPlatform> {
       const { CrazyGamesPlatform } = await import('./crazygames/CrazyGamesPlatform');
       return new CrazyGamesPlatform();
     }
+    case 'poki': {
+      const { PokiPlatform } = await import('./poki/PokiPlatform');
+      return new PokiPlatform();
+    }
     default:
       return new WebPlatform();
   }

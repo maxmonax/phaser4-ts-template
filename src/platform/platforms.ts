@@ -12,6 +12,8 @@ export const PLATFORMS = {
   yandex: { sdk: '/sdk.js' },
   /** CrazyGames, HTML5 SDK v3. */
   crazygames: { sdk: 'https://sdk.crazygames.com/crazygames-sdk-v3.js' },
+  /** Poki, HTML5 SDK v2. */
+  poki: { sdk: 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js' },
 } as const satisfies Record<string, { sdk: string | null }>;
 
 export type PlatformId = keyof typeof PLATFORMS;
