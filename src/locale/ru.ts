@@ -1,4 +1,4 @@
-import { LocaleData } from './LocaleKeys';
+import type { LocaleData } from './LocaleKeys';
 
 export const ru: LocaleData = {
   preloader_title: 'Загрузка завершена',

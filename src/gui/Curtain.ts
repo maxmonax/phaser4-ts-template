@@ -3,6 +3,7 @@ import { MyContainer } from './basic/MyContainer';
 import { MyGraphics } from './basic/MyGraphics';
 
 export class Curtain extends MyContainer {
+  protected _className = 'Curtain';
   private _curtain: MyGraphics;
 
   constructor(aParams: {

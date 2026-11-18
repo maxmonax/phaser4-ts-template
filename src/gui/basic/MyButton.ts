@@ -24,6 +24,8 @@ export type MyBtnParams = ButtonAnimConfig & {
   scale?: number;
   isHoverAnim?: boolean;
   clickScale?: boolean;
+  /** Button alpha while it is disabled. */
+  disabledAlpha?: number;
   audioClickAlias?: string;
   onClick?: (btn: MyButton) => void;
   context?: object;
@@ -37,6 +39,7 @@ const DEFAULT: MyBtnParams = {
   hoverScaleFactor: 1.1,
   clickScaleFactor: 0.95,
   clickScale: true,
+  disabledAlpha: 0.5,
   audioClickAlias: AudioAlias.Click,
 };
 
@@ -45,10 +48,11 @@ export enum MyBtnEvent {
 }
 
 export class MyButton extends MyContainer {
+  protected _className = 'MyButton';
   private _params: MyBtnParams;
   protected _dummy: MyContainer;
   protected _img!: MyImage;
-  private _tweenOver!: Phaser.Tweens.Tween;
+  private _tweenOver?: Phaser.Tweens.Tween;
   private _isOver = false;
   private _isDown = false;
   private _disabled = false;
@@ -160,13 +164,25 @@ export class MyButton extends MyContainer {
     }
   }
 
+  /** A disabled button ignores input and is drawn semi-transparent. */
   public set disabled(v: boolean) {
+    if (this._disabled === v) return;
     this._disabled = v;
-    if (this._disabled) {
+    if (v) {
       this.disableInteractive();
+      // The pointer may still be over the button: drop the hover and press state.
+      this._isOver = false;
+      this._isDown = false;
+      this._tweenOver?.stop();
+      this._dummy.setScale(this._params.scale ?? 1);
     } else {
       this.setInteractive();
     }
+    this.alpha = v ? (this._params.disabledAlpha ?? 0.5) : 1;
+  }
+
+  public get disabled(): boolean {
+    return this._disabled;
   }
 
   setClickListener(aCb: (btn: MyButton) => void, aCtx: object) {

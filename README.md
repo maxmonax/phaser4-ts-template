@@ -105,7 +105,7 @@ example `this.load.atlas('game', 'game.png', 'game.json')` in `PreloaderScene`.
 2. Replace the icons in `public/assets/icons/`.
 3. Set the game size and orientation in `src/data/Config.ts`.
 4. Replace the demo atlas and sounds, then build your scenes on top of `BaseScene`.
-5. Add texts to `src/locale/` (keys are declared in `LocaleKeys.ts`).
+5. Add texts to `src/locale/`: new keys go to `en.ts` first, the other locales must translate them.
 
 ## Development notes
 

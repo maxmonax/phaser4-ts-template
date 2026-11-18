@@ -11,6 +11,7 @@ const DEFAULT_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
 };
 
 export class MyTextButton extends MyButton {
+  protected _className = 'MyTextButton';
   protected _caption: MyText;
 
   constructor(

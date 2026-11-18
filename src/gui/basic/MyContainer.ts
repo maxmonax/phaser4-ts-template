@@ -3,7 +3,11 @@ import { ILogger } from '@/interfaces/ILogger';
 import { LogMng } from '@/utils/LogMng';
 
 export class MyContainer extends Phaser.GameObjects.Container implements ILogger {
-  private _className: string = 'MyContainer';
+  /**
+   * Name in log messages. Subclasses override it: `protected _className = 'MyButton';`
+   * (class names are not usable for that: the production build minifies them).
+   */
+  protected _className: string = 'MyContainer';
 
   constructor(
     scene: Phaser.Scene,
