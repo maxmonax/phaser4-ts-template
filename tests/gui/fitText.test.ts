@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fitText } from '@/gui/fitText';
+import { fitScale, fitText } from '@/gui/fitText';
 
 function makeText(width: number, height: number) {
   return {
@@ -47,5 +47,21 @@ describe('fitText', () => {
     const text = makeText(0, 0);
 
     expect(fitText(text, 200, 50)).toBe(1);
+  });
+});
+
+describe('fitScale', () => {
+  it('fits a box by the side that is short of room', () => {
+    // A popup 900×600 on a portrait phone 646 wide.
+    expect(fitScale(900, 600, 646, 1400)).toBeCloseTo(0.718, 3);
+    expect(fitScale(600, 900, 1400, 450)).toBe(0.5);
+  });
+
+  it('never scales up', () => {
+    expect(fitScale(800, 600, 1440, 1080)).toBe(1);
+  });
+
+  it('is never negative', () => {
+    expect(fitScale(800, 600, -10)).toBe(0);
   });
 });

@@ -86,6 +86,7 @@ that are not visible from the structure, and recipes for common changes.
 **Add a popup.** Extend `Popup<Result>` (see `src/gui/popup/PausePopup.ts`): build the content in
 the constructor with `this.content.add()`, set texts in `updateTexts()`, finish with
 `this.close(result)`. Open it with `await PopupScene.open(this, MyPopup, ...constructorArgs)`.
+A panel larger than the screen is scaled down by the base class: do not resize it by hand.
 
 **Add a text.** Key in `src/locale/en.ts`, translation in the nine other locale files, `this.t('key')`
 in the scene, and a line in the scene's language-change handler.

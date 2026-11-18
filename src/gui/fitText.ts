@@ -6,6 +6,22 @@ type Fittable = {
 };
 
 /**
+ * The scale that fits a `width` × `height` box into `maxWidth` × `maxHeight`: at most 1,
+ * never negative. A zero size does not limit it.
+ */
+export function fitScale(
+  width: number,
+  height: number,
+  maxWidth: number,
+  maxHeight = Infinity
+): number {
+  let scale = 1;
+  if (width > 0) scale = Math.min(scale, maxWidth / width);
+  if (height > 0) scale = Math.min(scale, maxHeight / height);
+  return Math.max(scale, 0);
+}
+
+/**
  * Scales a text (or any game object) down so that it fits into the given size.
  * It never scales up. Call it again after the text changes: a translation
  * is often longer than the original.
@@ -16,10 +32,7 @@ type Fittable = {
  * @returns the applied scale
  */
 export function fitText(obj: Fittable, maxWidth: number, maxHeight = Infinity): number {
-  let scale = 1;
-  if (obj.width > 0) scale = Math.min(scale, maxWidth / obj.width);
-  if (obj.height > 0) scale = Math.min(scale, maxHeight / obj.height);
-  scale = Math.max(scale, 0);
+  const scale = fitScale(obj.width, obj.height, maxWidth, maxHeight);
   obj.setScale(scale);
   return scale;
 }

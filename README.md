@@ -217,7 +217,8 @@ this.scene.resume();
 ```
 
 To make a popup, extend `Popup<Result>`: add objects to `this.content`, call `this.close(result)`.
-`allowDismiss(result)` adds a close button and closes the popup on a tap outside of it.
+`allowDismiss(result)` adds a close button and closes the popup on a tap outside of it. A panel
+larger than the screen (a portrait phone) is scaled down to fit it.
 
 ## Screen and layout
 

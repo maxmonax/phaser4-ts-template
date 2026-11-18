@@ -6,7 +6,7 @@ import { LocaleMng } from '@/locale/LocaleMng';
 import { Viewport } from '@/scaling/Viewport';
 import { MyContainer } from '../basic/MyContainer';
 import { iconButton } from '../buttons';
-import { fitText } from '../fitText';
+import { fitScale, fitText } from '../fitText';
 import { panelTexture } from '../shapes';
 import { Theme } from '../Theme';
 
@@ -14,10 +14,13 @@ const SHADE_ALPHA = 0.74;
 const OPEN_MS = 240;
 const CLOSE_MS = 150;
 const SHADOW = 18;
+/** The least room between the panel and the edges of the screen. */
+const SCREEN_MARGIN = 40;
 
 /**
  * Base class of a popup: a panel in the middle of the screen over a shade that
  * blocks the input of everything below. Open popups with `PopupScene.open()`.
+ * A panel larger than the screen (a portrait phone) is scaled down to fit it.
  *
  * ```ts
  * export class ConfirmPopup extends Popup<boolean> {
@@ -42,6 +45,8 @@ export abstract class Popup<TResult = void> extends MyContainer {
   readonly result: Promise<TResult>;
 
   private _shade: Phaser.GameObjects.Rectangle;
+  /** Holds `content` and scales it down to the screen. */
+  private _frame: MyContainer;
   private _title?: Phaser.GameObjects.Text;
   private _resolve!: (result: TResult) => void;
   private _closing = false;
@@ -67,27 +72,48 @@ export abstract class Popup<TResult = void> extends MyContainer {
     // Interactive: pointer events do not reach the objects and the scenes below.
     this._shade.setInteractive();
     this.add(this._shade);
-    this.fitShade();
-    EventBus.on(FrontEvent.WINDOW_RESIZE, this.fitShade, this);
 
-    this.content = new MyContainer(scene, Config.GW_HALF, Config.GH_HALF);
-    this.add(this.content);
+    // The frame fits the screen, the content plays the opening and closing animations.
+    this._frame = new MyContainer(scene, Config.GW_HALF, Config.GH_HALF);
+    this.add(this._frame);
+    this.content = new MyContainer(scene, 0, 0);
+    this._frame.add(this.content);
     const panel = panelTexture(scene, panelWidth, panelHeight, { shadow: SHADOW });
     this.content.add(new Phaser.GameObjects.Image(scene, 0, SHADOW / 2, panel));
+
+    this.fitScreen();
+    EventBus.on(FrontEvent.WINDOW_RESIZE, this.fitScreen, this);
 
     const locale = LocaleMng.getInstance();
     const onLangChange = () => this.updateTexts();
     locale.onLangChange(onLangChange);
     this.once(Phaser.GameObjects.Events.DESTROY, () => {
       locale.offLangChange(onLangChange);
-      EventBus.off(FrontEvent.WINDOW_RESIZE, this.fitShade, this);
+      EventBus.off(FrontEvent.WINDOW_RESIZE, this.fitScreen, this);
     });
   }
 
-  /** The screen is centered on the full area: only the size changes. */
-  private fitShade(): void {
+  /** The screen is centered on the full area: only its size changes. */
+  private fitScreen(): void {
     // Also resizes the input area of the shade.
     this._shade.setSize(Viewport.screen.width, Viewport.screen.height);
+    this._frame.setScale(
+      fitScale(
+        this.panelWidth + SCREEN_MARGIN * 2,
+        this.panelHeight + SCREEN_MARGIN * 2,
+        Viewport.width,
+        Viewport.height
+      )
+    );
+  }
+
+  /** Whether a point of the world is on the panel, at its current scale. */
+  private isOnPanel(x: number, y: number): boolean {
+    const scale = this._frame.scale;
+    return (
+      Math.abs(x - Config.GW_HALF) <= (this.panelWidth / 2) * scale &&
+      Math.abs(y - Config.GH_HALF) <= (this.panelHeight / 2) * scale
+    );
   }
 
   /** Called when the language changes while the popup is open: set the texts again. */
@@ -115,16 +141,8 @@ export abstract class Popup<TResult = void> extends MyContainer {
     button.setPosition(this.panelWidth / 2 - 30, -this.panelHeight / 2 + 30);
     this.content.add(button);
 
-    const w = this.panelWidth;
-    const h = this.panelHeight;
-    const panelArea = new Phaser.Geom.Rectangle(
-      Config.GW_HALF - w / 2,
-      Config.GH_HALF - h / 2,
-      w,
-      h
-    );
     this._shade.on(Phaser.Input.Events.POINTER_UP, (pointer: Phaser.Input.Pointer) => {
-      if (!panelArea.contains(pointer.worldX, pointer.worldY)) this.close(result);
+      if (!this.isOnPanel(pointer.worldX, pointer.worldY)) this.close(result);
     });
   }
 
