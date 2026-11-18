@@ -5,6 +5,8 @@ import '@fontsource/ubuntu/cyrillic-400.css';
 import './styles/main.css';
 import * as Phaser from 'phaser';
 import { Config } from './data/Config';
+import { DevParams } from './data/DevParams';
+import { FpsMeter } from './debug/FpsMeter';
 import { Params } from './data/Params';
 import { BootScene } from './scenes/BootScene';
 import { GameScene } from './scenes/GameScene';
@@ -96,6 +98,7 @@ async function boot(): Promise<void> {
 
   const game = startGame(gameContainer);
   bindGamePause(game);
+  if (DevParams.debug) FpsMeter.attach(game);
 }
 
 if (document.readyState === 'loading') {

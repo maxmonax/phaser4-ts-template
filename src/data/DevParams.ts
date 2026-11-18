@@ -3,7 +3,8 @@
  * Parsed once at module load — use the exported object everywhere.
  *
  * ── Hash params ────────────────────────────────────────────────────────────
- *   #debug          Enable verbose logging (LogMng.MODE_DEBUG), dev builds only
+ *   #debug          Verbose logging (LogMng.MODE_DEBUG), dev builds only;
+ *                   frame rate overlay (FpsMeter), any build
  *
  * ── GET params ─────────────────────────────────────────────────────────────
  *   ?testParam=     Logged to console in BootScene (example param)

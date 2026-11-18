@@ -109,8 +109,8 @@ example `this.load.atlas('game', 'game.png', 'game.json')` in `PreloaderScene`.
 
 ## Development notes
 
-- **Verbose logs** — open the dev server with `#debug` in the URL, e.g.
-  `http://localhost:9100/#debug`.
+- **Debug mode** — add `#debug` to the URL, e.g. `http://localhost:9100/#debug`: verbose logs
+  (dev builds only) and a frame rate overlay (any build, so it works in a portal draft too).
 - **Phaser import** — import Phaser explicitly in every module that uses it:
   `import * as Phaser from 'phaser'`. There is no global `Phaser` object in the production
   build; a lint rule guards this.
