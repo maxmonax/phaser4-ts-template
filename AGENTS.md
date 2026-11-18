@@ -26,6 +26,8 @@ that are not visible from the structure, and recipes for common changes.
   static classes named `*Mng`.
 - `tests/` — unit tests: Vitest, Node environment, no DOM, no Phaser. `e2e/` — Playwright tests
   of the builds in `dist/`.
+- `docs/ROADMAP.md` — ideas and known limitations. Read it before changing a known trade-off;
+  remove an item when it is done, add one when you find a limitation.
 
 ## Rules
 

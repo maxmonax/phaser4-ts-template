@@ -105,9 +105,11 @@ write(
 );
 console.log('✓ README.md (the template guide is now TEMPLATE.md)');
 
-if (existsSync(join(root, 'AGENTS.md'))) {
-  write('AGENTS.md', read('AGENTS.md').replaceAll('README.md', 'TEMPLATE.md'));
-  console.log('✓ AGENTS.md');
+// The guides that link to the template README.
+for (const file of ['AGENTS.md', 'docs/ROADMAP.md']) {
+  if (!existsSync(join(root, file))) continue;
+  write(file, read(file).replaceAll('README.md', 'TEMPLATE.md'));
+  console.log(`✓ ${file}`);
 }
 
 rmSync(fileURLToPath(import.meta.url));

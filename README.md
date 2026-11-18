@@ -80,6 +80,7 @@ Open [http://localhost:9100](http://localhost:9100).
 ├── scripts/             # zip packing, build checks, atlas types, init
 ├── tests/               # Unit tests
 ├── e2e/                 # Browser tests of the builds
+├── docs/ROADMAP.md      # Ideas, known limitations, what is not verified yet
 ├── AGENTS.md            # Rules and recipes for coding agents
 └── vite.config.ts       # Build and test configuration
 ```
@@ -374,6 +375,11 @@ Everything in `public/` is copied to the build unchanged and is loaded at runtim
 - **Deploy** — `npm run build` produces a static site in `dist/web/`, `build:<platform>` in
   `dist/<platform>/`. All paths are relative, so a build works from any folder. `npm run zip`
   packs every build into `dist/<name>-<platform>-<version>.zip` with `index.html` at the root.
+
+## Roadmap
+
+Ideas for the template, its known limitations and what has not been verified yet are listed in
+[docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## License
 
