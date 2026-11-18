@@ -3,6 +3,7 @@ import { ATLASES } from '@/data/Assets';
 import { AUDIO_LOAD_DATA } from '@/data/AudioData';
 import { Theme } from '@/gui/Theme';
 import { Config } from '../data/Config';
+import { DevParams } from '../data/DevParams';
 import { PreloaderBar } from '../gui/preloader/PreloaderBar';
 import { PlatformMng } from '../platform/PlatformMng';
 import { LogMng } from '../utils/LogMng';
@@ -63,11 +64,22 @@ export class PreloaderScene extends BaseScene {
       this.add.rectangle(Config.GW / 2, Config.GH / 2, Config.GW_SAFE, Config.GH_SAFE, 0x0, 0.1);
     }
 
-    if (Config.PRELOADER.TAP_TO_START) {
+    const devScene = this.devScene();
+    if (devScene) {
+      this.scene.start(devScene);
+    } else if (Config.PRELOADER.TAP_TO_START) {
       this.showTapToStart();
     } else {
       this.startGame();
     }
+  }
+
+  /** `?scene=GameScene` in a dev build: skip the menu and open that scene. */
+  private devScene(): string | null {
+    if (!import.meta.env.DEV || !DevParams.scene) return null;
+    if (this.scene.get(DevParams.scene)) return DevParams.scene;
+    LogMng.warn(`?scene=${DevParams.scene}: there is no such scene`);
+    return null;
   }
 
   /**

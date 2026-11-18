@@ -49,6 +49,25 @@ body {
   max-width: 200px;
 }
 
+/* #debug: errors on screen, see src/debug/ErrorOverlay.ts */
+.error-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  max-height: 40%;
+  overflow: auto;
+  padding: 6px 8px;
+  font: 12px/1.4 monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #ffd7d7;
+  background: rgba(90, 0, 0, 0.85);
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* #debug: frame rate overlay, see src/debug/FpsMeter.ts */
 .fps-meter {
   position: fixed;

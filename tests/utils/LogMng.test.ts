@@ -64,4 +64,23 @@ describe('LogMng', () => {
     LogMng.setMode(LogMng.MODE_RELEASE);
     expect(LogMng.getMode()).toBe(LogMng.MODE_RELEASE);
   });
+
+  it('reports warnings and errors to listeners, until they are removed', () => {
+    const listener = vi.fn();
+    const off = LogMng.onProblem(listener);
+
+    LogMng.debug('d');
+    LogMng.warn('w', { a: 1 });
+    LogMng.error('e');
+
+    expect(listener.mock.calls).toEqual([
+      ['WARNING', 'w', { a: 1 }],
+      ['ERROR', 'e', undefined],
+    ]);
+
+    off();
+    LogMng.error('e2');
+
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
 });

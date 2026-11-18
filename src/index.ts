@@ -10,6 +10,7 @@ import { AudioMng } from './audio/AudioMng';
 import { AudioSettings } from './audio/AudioSettings';
 import { Config } from './data/Config';
 import { DevParams } from './data/DevParams';
+import { ErrorOverlay } from './debug/ErrorOverlay';
 import { FpsMeter } from './debug/FpsMeter';
 import { Params } from './data/Params';
 import { BootScene } from './scenes/BootScene';
@@ -79,6 +80,9 @@ function bindSaveFlush(): void {
 }
 
 async function boot(): Promise<void> {
+  // First of all: the errors of the startup itself are worth seeing too.
+  if (DevParams.debug) ErrorOverlay.attach();
+
   const gameContainer = document.getElementById(GAME_CONTAINER_ID);
   if (!gameContainer) {
     throw new Error(`Game container #${GAME_CONTAINER_ID} not found`);

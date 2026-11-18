@@ -1,5 +1,6 @@
 type LogLevel = 'DEBUG' | 'INFO' | 'NETWORK' | 'WARNING' | 'ERROR';
 type LogMode = typeof LogMng.MODE_DEBUG | typeof LogMng.MODE_RELEASE;
+type ProblemListener = (level: 'WARNING' | 'ERROR', message: unknown, data?: unknown) => void;
 
 const BADGE_CSS: Record<LogLevel, string> = {
   DEBUG: 'background: #ADADAD; color: #fff; padding: 1px 4px',
@@ -21,6 +22,7 @@ export class LogMng {
   static readonly MODE_RELEASE = 'MODE_RELEASE';
 
   private static mode: LogMode = LogMng.MODE_DEBUG;
+  private static problemListeners: ProblemListener[] = [];
 
   public static setMode(aMode: LogMode): void {
     LogMng.mode = aMode;
@@ -87,11 +89,25 @@ export class LogMng {
 
   public static warn(aMsg: unknown, aData?: unknown): boolean {
     LogMng.print(console.warn, 'WARNING', aMsg, aData);
+    LogMng.problemListeners.forEach((listener) => listener('WARNING', aMsg, aData));
     return true;
   }
 
   public static error(aMsg: unknown, aData?: unknown): boolean {
     LogMng.print(console.error, 'ERROR', aMsg, aData);
+    LogMng.problemListeners.forEach((listener) => listener('ERROR', aMsg, aData));
     return true;
+  }
+
+  /**
+   * Calls `listener` for every warning and error, e.g. to show them on screen
+   * (`ErrorOverlay`) or to send them to an error tracker.
+   * @returns a function that removes the listener
+   */
+  public static onProblem(listener: ProblemListener): () => void {
+    LogMng.problemListeners.push(listener);
+    return () => {
+      LogMng.problemListeners = LogMng.problemListeners.filter((item) => item !== listener);
+    };
   }
 }
