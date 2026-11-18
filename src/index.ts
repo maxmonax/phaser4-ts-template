@@ -16,6 +16,8 @@ import { FrontEvent } from './events/FrontEvent';
 import { ShellBridge } from './events/ShellBridge';
 import { detectLang, LocaleMng } from './locale/LocaleMng';
 import { bindGamePause } from './pause/bindGamePause';
+import { KeyValueSaveStorage } from './save/KeyValueSaveStorage';
+import { SaveMng } from './save/SaveMng';
 import { OrientationAlert } from './scaling/OrientationAlert';
 import { loadFonts } from './utils/FontLoader';
 
@@ -58,6 +60,15 @@ window.addEventListener(
   false
 );
 
+/** Writes pending changes when the player leaves: the tab may never come back. */
+function bindSaveFlush(): void {
+  const flush = () => void SaveMng.flush();
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) flush();
+  });
+}
+
 async function boot(): Promise<void> {
   const gameContainer = document.getElementById(GAME_CONTAINER_ID);
   if (!gameContainer) {
@@ -69,10 +80,19 @@ async function boot(): Promise<void> {
     OrientationAlert.checkOrientation();
   }
   ShellBridge.init();
-  LocaleMng.getInstance().setLang(detectLang());
   windowResizeCalculate();
 
-  await loadFonts(Object.values(Config.FONT));
+  await Promise.all([
+    SaveMng.init(KeyValueSaveStorage.local(Config.SAVE.KEY), Config.SAVE.DELAY_MS),
+    loadFonts(Object.values(Config.FONT)),
+  ]);
+  bindSaveFlush();
+
+  // The language the player picked earlier wins over the browser settings.
+  const savedLang = SaveMng.get('lang');
+  LocaleMng.getInstance().setLang(
+    detectLang(savedLang ? [savedLang, ...navigator.languages] : navigator.languages)
+  );
 
   const game = startGame(gameContainer);
   bindGamePause(game);

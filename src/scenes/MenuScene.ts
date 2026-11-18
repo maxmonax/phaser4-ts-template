@@ -4,6 +4,7 @@ import { MyTextButton } from '@/gui/basic/MyTextButton';
 import { Config } from '../data/Config';
 import { LANGS, type Lang } from '../locale/LocaleKeys';
 import { LocaleMng } from '../locale/LocaleMng';
+import { SaveMng } from '../save/SaveMng';
 import { LogMng } from '../utils/LogMng';
 import { BaseScene } from './BaseScene';
 import { SceneNames } from './SceneNames';
@@ -67,6 +68,7 @@ export class MenuScene extends BaseScene {
     const current = LocaleMng.getInstance().getLang();
     const next = LANGS[(LANGS.indexOf(current) + 1) % LANGS.length];
     LocaleMng.getInstance().setLang(next);
+    SaveMng.set('lang', next);
   }
 
   private onResize() {

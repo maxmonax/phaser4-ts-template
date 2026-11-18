@@ -26,6 +26,13 @@ export const Config = {
     MAIN: 'Ubuntu',
   },
 
+  SAVE: {
+    /** Storage key of the game state. Make it unique for every game on the same site. */
+    KEY: 'phaser-template',
+    /** A change is written this long after the last change. */
+    DELAY_MS: 1000,
+  },
+
   PRELOADER: {
     BAR: true,
     TAP_TO_START: true,
