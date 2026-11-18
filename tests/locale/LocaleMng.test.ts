@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { en } from '@/locale/en';
-import { LANGS } from '@/locale/LocaleKeys';
+import { LANG_NAMES, LANGS } from '@/locale/LocaleKeys';
 import { ru } from '@/locale/ru';
 import { detectLang, LocaleMng, t } from '@/locale/LocaleMng';
 
@@ -64,6 +64,83 @@ describe('LocaleMng', () => {
 
       expect(t('menu_title', { other: 1 })).toBe('Hello, {name}!');
     });
+  });
+
+  describe('plural forms', () => {
+    const originalEn = en.menu_title;
+    const originalRu = ru.menu_title;
+
+    beforeEach(() => {
+      en.menu_title = '{count} {count|orb|orbs}';
+      ru.menu_title = '{count} {count|шар|шара|шаров}';
+    });
+
+    afterEach(() => {
+      en.menu_title = originalEn;
+      ru.menu_title = originalRu;
+    });
+
+    it('picks the English form', () => {
+      expect(t('menu_title', { count: 0 })).toBe('0 orbs');
+      expect(t('menu_title', { count: 1 })).toBe('1 orb');
+      expect(t('menu_title', { count: 2 })).toBe('2 orbs');
+      expect(t('menu_title', { count: 21 })).toBe('21 orbs');
+    });
+
+    it('picks the Russian form', () => {
+      locale.setLang('ru');
+
+      expect(t('menu_title', { count: 1 })).toBe('1 шар');
+      expect(t('menu_title', { count: 2 })).toBe('2 шара');
+      expect(t('menu_title', { count: 5 })).toBe('5 шаров');
+      expect(t('menu_title', { count: 11 })).toBe('11 шаров');
+      expect(t('menu_title', { count: 21 })).toBe('21 шар');
+      expect(t('menu_title', { count: 104 })).toBe('104 шара');
+      expect(t('menu_title', { count: 0 })).toBe('0 шаров');
+    });
+
+    it('falls back to the last form when a form is missing', () => {
+      locale.setLang('ru');
+      ru.menu_title = '{count|шар|шара}';
+
+      expect(t('menu_title', { count: 5 })).toBe('шара');
+    });
+
+    it('leaves the forms untouched without a number', () => {
+      expect(t('menu_title', { count: 'many' })).toBe('many {count|orb|orbs}');
+      expect(t('menu_title', { other: 1 })).toBe('{count} {count|orb|orbs}');
+    });
+
+    it('accepts a number passed as a string', () => {
+      expect(t('menu_title', { count: '1' })).toBe('1 orb');
+    });
+  });
+
+  describe('formatNumber', () => {
+    it('groups digits the way the language does', () => {
+      expect(locale.formatNumber(1234567)).toBe('1,234,567');
+
+      locale.setLang('ru');
+
+      // Russian groups digits with a no-break space.
+      expect(locale.formatNumber(1234567)).toMatch(/^1\s234\s567$/);
+    });
+
+    it('accepts Intl options', () => {
+      expect(locale.formatNumber(1200000, { notation: 'compact' })).toBe('1.2M');
+    });
+  });
+
+  it('nextLang() cycles through the languages', () => {
+    expect(locale.nextLang()).toBe('ru');
+
+    locale.setLang('ru');
+
+    expect(locale.nextLang()).toBe('en');
+  });
+
+  it('names every language', () => {
+    expect(Object.keys(LANG_NAMES).sort()).toEqual([...LANGS].sort());
   });
 
   it('every locale defines the same keys', () => {

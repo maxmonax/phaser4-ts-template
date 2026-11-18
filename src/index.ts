@@ -98,7 +98,11 @@ async function boot(): Promise<void> {
 
   // The language the player picked in the menu wins, then the platform, then the browser.
   const langs = [SaveMng.get('lang'), PlatformMng.getLang(), ...navigator.languages];
-  LocaleMng.getInstance().setLang(detectLang(langs.filter((lang) => lang !== null)));
+  const locale = LocaleMng.getInstance();
+  locale.setLang(detectLang(langs.filter((lang) => lang !== null)));
+  // The page language follows the game language: screen readers, hyphenation, portal checks.
+  document.documentElement.lang = locale.getLang();
+  locale.onLangChange((lang) => (document.documentElement.lang = lang));
 
   const game = startGame(gameContainer);
   bindGamePause(game);

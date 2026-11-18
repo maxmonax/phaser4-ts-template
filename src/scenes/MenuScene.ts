@@ -3,7 +3,7 @@ import { AdMng } from '@/ads/AdMng';
 import { MyButton } from '@/gui/basic/MyButton';
 import { MyTextButton } from '@/gui/basic/MyTextButton';
 import { Config } from '../data/Config';
-import { LANGS, type Lang } from '../locale/LocaleKeys';
+import { LANG_NAMES, type Lang } from '../locale/LocaleKeys';
 import { LocaleMng } from '../locale/LocaleMng';
 import { SaveMng } from '../save/SaveMng';
 import { LogMng } from '../utils/LogMng';
@@ -50,11 +50,11 @@ export class MenuScene extends BaseScene {
     this._dummyMain.add(this._btnPlay);
 
     this._btnLang = new MyTextButton(this, Config.GW_HALF, Config.GH_HALF + 400, {
-      size: { w: 160, h: 80 },
+      size: { w: 360, h: 80 },
       onClick: this.onLangBtnClick,
       context: this,
     });
-    this._btnLang.setText(this.t('menu_lang_btn'));
+    this._btnLang.setText(LANG_NAMES[LocaleMng.getInstance().getLang()]);
     this._dummyMain.add(this._btnLang);
 
     this.registerLangChange(this.onLangChange);
@@ -64,14 +64,13 @@ export class MenuScene extends BaseScene {
     this.onResize();
   }
 
-  private onLangChange(_lang: Lang): void {
+  private onLangChange(lang: Lang): void {
     this._title.setText(this.t('menu_title'));
-    this._btnLang.setText(this.t('menu_lang_btn'));
+    this._btnLang.setText(LANG_NAMES[lang]);
   }
 
   private onLangBtnClick(): void {
-    const current = LocaleMng.getInstance().getLang();
-    const next = LANGS[(LANGS.indexOf(current) + 1) % LANGS.length];
+    const next = LocaleMng.getInstance().nextLang();
     LocaleMng.getInstance().setLang(next);
     SaveMng.set('lang', next);
   }
