@@ -2,7 +2,7 @@
 
 A starter template for browser games built with **Phaser 4**, **TypeScript** and **Vite**.
 
-> The same template for Phaser 3: [phaser3-ts-webpack](https://github.com/maxmonax/phaser3-ts-webpack).
+> The same template for Phaser 3: [phaser3-ts-template](https://github.com/maxmonax/phaser3-ts-template).
 
 ## Stack
 
