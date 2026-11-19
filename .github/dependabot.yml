@@ -4,6 +4,11 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    ignore:
+      # The types follow the oldest Node in "engines" (package.json), so the compiler rejects
+      # APIs that Node lacks. Raise them by hand together with "engines".
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       dev-tooling:
         dependency-type: development
