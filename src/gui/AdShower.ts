@@ -5,9 +5,9 @@ import { MyContainer } from './basic/MyContainer';
 import { cssColor, Theme } from './Theme';
 
 /**
- * "Ad in 3… 2… 1…" countdown before an interstitial. Optional: use it where the
- * game decides when an ad is shown (a platform with `interstitialCooldownMs > 0`).
- * On platforms that pace ads themselves the ad may not follow the countdown.
+ * "Ad in 3… 2… 1…" countdown before an interstitial. Optional: every portal may still
+ * decide not to show the ad (Yandex and CrazyGames pace ads too, Poki decides every time),
+ * so the countdown can end with no ad.
  *
  * ```ts
  * if (AdMng.canShowInterstitial()) {

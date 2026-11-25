@@ -52,6 +52,27 @@ export const Config = {
     DELAY_MS: 1000,
   },
 
+  ADS: {
+    /**
+     * The shortest time between two interstitials, and from the moment the game has loaded
+     * to the first one: the portal may show its own ad at the start. A rewarded ad restarts it
+     * too. A platform that paces ads itself may lower it: Poki sets 0 (`IPlatform`).
+     */
+    INTERSTITIAL_INTERVAL_MS: 60_000,
+    /**
+     * How long the game waits for a requested ad to start. Then the game goes on without it;
+     * an ad that starts later pauses the game again until it is over.
+     */
+    START_TIMEOUT_MS: 5_000,
+  },
+
+  /**
+   * Technical name of the leaderboard in the Yandex Games console that
+   * `PlatformMng.reportScore()` writes to: numeric, sorted in descending order.
+   * Empty: the game has no leaderboard. Other portals have none.
+   */
+  YANDEX_LEADERBOARD: '',
+
   PRELOADER: {
     BAR: true,
     TAP_TO_START: true,

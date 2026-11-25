@@ -12,14 +12,17 @@
     gameLoadingFinished: () => log('gameLoadingFinished'),
     gameplayStart: () => log('gameplayStart'),
     gameplayStop: () => log('gameplayStop'),
-    commercialBreak() {
+    commercialBreak(onStart) {
       log('commercialBreak');
+      onStart?.();
       return later();
     },
-    rewardedBreak() {
+    rewardedBreak(onStart) {
       log('rewardedBreak');
+      onStart?.();
       return later(true);
     },
     getLanguage: () => 'ru',
+    measure: (category, what, action) => log(`measure:${category}:${what}:${action}`),
   };
 })();

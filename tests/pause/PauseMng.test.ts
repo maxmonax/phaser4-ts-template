@@ -41,6 +41,22 @@ describe('PauseMng', () => {
     expect(listener.mock.calls).toEqual([[true], [false]]);
   });
 
+  it('keeps the sound on while the game only waits for an ad', () => {
+    const listener = vi.fn();
+    PauseMng.onMuteChange(listener);
+
+    PauseMng.pause('adWait');
+    expect(PauseMng.isPaused()).toBe(true);
+    expect(PauseMng.isMuted()).toBe(false);
+
+    PauseMng.pause('ad');
+    PauseMng.resume('adWait');
+    expect(PauseMng.isMuted()).toBe(true);
+
+    PauseMng.resume('ad');
+    expect(listener.mock.calls).toEqual([[true], [false]]);
+  });
+
   it('set() adds and removes a reason', () => {
     PauseMng.set('orientation', true);
     expect(PauseMng.has('orientation')).toBe(true);

@@ -35,6 +35,16 @@ body {
   height: 100%;
 }
 
+/* A portal may limit the shape of the game field, see src/scaling/limitFieldAspect.ts.
+   The field is centered, the page background fills the rest of the window. */
+.field-limited #game {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(100%, 100vh * var(--field-max-aspect));
+  height: min(100%, 100vw * var(--field-max-aspect));
+}
+
 .rotate-image-container {
   display: none;
   width: 100%;

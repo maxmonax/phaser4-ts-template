@@ -89,8 +89,9 @@ Open [http://localhost:9100](http://localhost:9100).
 
 - **Game portals** — one code base, a build per portal: Yandex Games, CrazyGames, Poki and a plain
   web version. See [Platforms](#platforms).
-- **Ads** — `AdMng`: interstitial and rewarded ads, one at a time, the game is paused and muted
-  while an ad is on screen.
+- **Ads** — `AdMng`: interstitial and rewarded ads, one at a time, interstitials at least a
+  minute apart. The game stops while an ad is requested and is muted once it is on screen; an SDK
+  that does not start the ad in 5 seconds does not hold the game. See [Ads](#ads).
 - **Saves** — `SaveMng`: a typed game state, saved to the portal's cloud storage or `localStorage`,
   writes batched and flushed when the page is hidden.
 - **Pause** — `PauseMng`: the game is paused while any reason is active (an ad, the rotate overlay,
@@ -124,12 +125,12 @@ Open [http://localhost:9100](http://localhost:9100).
 
 ## Platforms
 
-| Platform     | Build                      | Language                 | Saves                           | Ads                     |
-| ------------ | -------------------------- | ------------------------ | ------------------------------- | ----------------------- |
-| Web          | `npm run build`            | browser                  | `localStorage`                  | none (simulated in dev) |
-| Yandex Games | `npm run build:yandex`     | `environment.i18n.lang`  | player data, SDK safe storage   | fullscreen, rewarded    |
-| CrazyGames   | `npm run build:crazygames` | `user.systemInfo.locale` | `SDK.data`, `localStorage`      | midgame, rewarded       |
-| Poki         | `npm run build:poki`       | `getLanguage()`          | `localStorage` (synced by Poki) | commercial, rewarded    |
+| Platform     | Build                      | Language                          | Saves                           | Ads                     |
+| ------------ | -------------------------- | --------------------------------- | ------------------------------- | ----------------------- |
+| Web          | `npm run build`            | browser                           | `localStorage`                  | none (simulated in dev) |
+| Yandex Games | `npm run build:yandex`     | `environment.i18n.lang`, fallback | player data, SDK safe storage   | fullscreen, rewarded    |
+| CrazyGames   | `npm run build:crazygames` | `user.systemInfo.locale`          | `SDK.data`, `localStorage`      | midgame, rewarded       |
+| Poki         | `npm run build:poki`       | `getLanguage()`                   | `localStorage` (synced by Poki) | commercial, rewarded    |
 
 **How it works.** The platform is chosen at build time: `vite build --mode yandex`.
 `vite.config.ts` adds the SDK `<script>` of that platform to `index.html` and replaces
@@ -138,7 +139,10 @@ bundle (`npm run check:builds` verifies it). The SDKs themselves are not part of
 the bundle: each portal serves its SDK from its own server. An adapter is 1–2 kB.
 
 If the SDK does not load or fails to start (an ad blocker, the game opened outside the portal), the
-game runs on the web platform without ads, and an error goes to the console.
+game runs on the web platform without ads, and an error goes to the console. A slow SDK holds the
+start for 5 seconds at most: then the game starts in the browser language and with
+`localStorage`, and the SDK joins when it is ready (within 30 seconds). It then hears what it has
+missed: loading finished, gameplay going, the level attempt.
 
 **In the game code:**
 
@@ -146,6 +150,9 @@ game runs on the web platform without ads, and an error goes to the console.
 PlatformMng.loadingFinished(); // once, when the player can start playing (PreloaderScene)
 PlatformMng.gameplayStart(); // a round starts (GameScene)
 PlatformMng.gameplayStop(); // the round ends, a menu opens
+PlatformMng.levelStart(3); // an attempt at level 3 (Poki statistics)
+PlatformMng.levelEnd(won); // the attempt is over; leaving it for the menu: levelEnd(false)
+void PlatformMng.reportScore(best); // the best result to the leaderboard (Yandex)
 
 await AdMng.showInterstitial(); // at a natural break; the demo: before every round but the first
 if (await AdMng.showRewarded()) giveReward();
@@ -156,6 +163,26 @@ SaveMng.set('best', score); // fields are declared in src/save/SaveData.ts
 
 Gameplay is reported to the portal only while the game is not paused: during an ad, with a hidden
 tab or with the rotate overlay the portal gets `gameplayStop`, and `gameplayStart` after that.
+Never twice in a row, and not on behalf of the SDK: Yandex stops and starts `GameplayAPI` itself on
+`game_api_pause` and `game_api_resume` (`IPlatform.pauseStopsGameplay`).
+
+### Ads
+
+`AdMng.showInterstitial()` and `showRewarded()` work the same on every portal:
+
+- **The request** stops the game (`adWait`), so the ad opens over the screen the player has left.
+  The sound plays on: the SDK may answer that there is no ad, and CrazyGames asks to mute only
+  when an ad starts.
+- **The ad starts** (`onOpen`, `adStarted`): the game is muted until it is over. Poki does not
+  always report the start, so there the game is muted from the request on.
+- **No answer in 5 seconds** (`Config.ADS.START_TIMEOUT_MS`): the game goes on as if there were no
+  ad, a rewarded ad gives no reward. If the ad starts later anyway, the game stops again until it
+  is over. No other ad is requested until the SDK has answered.
+- **The interval.** Interstitials are at least `Config.ADS.INTERSTITIAL_INTERVAL_MS` (60 s) apart,
+  and the first one comes that long after the game has loaded: the portal may show its own ad at
+  the start. A rewarded ad restarts the interval too. Yandex and CrazyGames pace ads themselves as
+  well (CrazyGames: one midgame ad in 3 minutes); Poki decides every break itself, so there the
+  game keeps no interval and signals every natural break.
 
 **Testing a platform locally:**
 
@@ -170,11 +197,17 @@ tab or with the rotate overlay the portal gets `gameplayStop`, and `gameplayStar
 
 **Platform notes:**
 
-- **Yandex Games** — keep `interstitialCooldownMs` in `YandexPlatform` in line with the ad interval
-  in the developer console. Upload the archive from `npm run zip`.
+- **Yandex Games** — the language is the SDK's; a language the game lacks gets the Yandex
+  fallback: Russian for Belarusian, Kazakh, Ukrainian and Uzbek, English for the rest. On a
+  desktop the game field is at most 2:1 (requirement 1.6.2.2), centered, the page background
+  around it. For a leaderboard set `Config.YANDEX_LEADERBOARD` and create a numeric leaderboard
+  with that technical name in the console; a guest writes nothing. Upload the archive from
+  `npm run zip`.
 - **CrazyGames** — turn on "Progress Save" when submitting the game, or saves stay in
   `localStorage`. Between two levels show either a midgame ad or a rewarded "continue", not both.
 - **Poki** — a commercial break is expected before every gameplay start except the first one.
+  With an ad blocker `PokiSDK.init()` fails: the game goes on with the SDK, without ads.
+  Level attempts go to `measure('level', …)`.
 
 **Adding a platform:** implement `IPlatform` in `src/platform/<id>/`, add the id and the SDK script
 to `PLATFORMS` in `src/platform/platforms.ts`, add a branch to `createPlatform()`, the scripts to
@@ -250,6 +283,10 @@ full area. A full-screen shade or background is sized by `Viewport.screen`.
 tablet held the wrong way shows the "rotate your device" overlay: the game keeps loading behind it
 and is paused once loaded. A desktop window of any shape shows the game.
 
+**A portal may limit the field.** Yandex Games asks for a game field of at most 2:1 on a desktop:
+there the game is a centered box of that shape (`limitFieldAspect()`), and the canvas fills the
+box, not the window. The layout needs nothing: the box is just a window of another shape.
+
 **Choosing the sizes.** The safe area height is the resolution the art is drawn for: 1080 looks
 sharp on most phones, a lower one (720 in landscape, 1200–1400 in portrait) means smaller atlases
 and less memory on weak phones. The safe area is the narrowest screen you design for, the full
@@ -301,7 +338,8 @@ this.registerLangChange(this.updateTexts); // texts follow the language switch
   singular and plural, are enough.
 
 - **The language** is the one the player picked (`LangButton` opens the list, the choice is
-  saved), then the portal's, then the browser's, then English. Any Chinese variant gets
+  saved), then the portal's, then the browser's, then English. Yandex names a fallback after the
+  player's language (Russian or English), so there the browser is not asked. Any Chinese variant gets
   Simplified Chinese, any Portuguese one gets Brazilian Portuguese.
 - **Fonts** — the bundled font (Ubuntu, Latin and Cyrillic) covers seven of the languages. Chinese,
   Japanese and Korean are drawn with a system font of the device: every phone and computer has

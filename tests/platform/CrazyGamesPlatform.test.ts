@@ -39,6 +39,7 @@ function fakeSdk() {
 }
 
 const host = { setPaused: vi.fn(), setMuted: vi.fn() };
+const noop = () => {};
 
 describe('CrazyGamesPlatform', () => {
   let sdk: ReturnType<typeof fakeSdk>;
@@ -86,24 +87,33 @@ describe('CrazyGamesPlatform', () => {
   });
 
   it('takes the language from systemInfo.locale', () => {
-    expect(platform.getLang()).toBe('de-DE');
+    expect(platform.getLangs()).toEqual(['de-DE']);
   });
 
   it('requests a midgame ad for an interstitial', async () => {
-    const ad = platform.showInterstitial();
+    const ad = platform.showInterstitial(noop);
     expect(sdk.lastAd?.type).toBe('midgame');
 
     sdk.lastAd?.callbacks.adError?.({ code: 'unfilled', message: '' });
     await expect(ad).resolves.toBeUndefined();
   });
 
+  it('tells when the ad has started, not when it is requested', () => {
+    const started = vi.fn();
+    void platform.showInterstitial(started);
+    expect(started).not.toHaveBeenCalled();
+
+    sdk.lastAd?.callbacks.adStarted?.();
+    expect(started).toHaveBeenCalledTimes(1);
+  });
+
   it('gives the reward only when the rewarded ad finished', async () => {
-    const watched = platform.showRewarded();
+    const watched = platform.showRewarded(noop);
     expect(sdk.lastAd?.type).toBe('rewarded');
     sdk.lastAd?.callbacks.adFinished?.();
     await expect(watched).resolves.toBe(true);
 
-    const failed = platform.showRewarded();
+    const failed = platform.showRewarded(noop);
     sdk.lastAd?.callbacks.adError?.({ code: 'adblock', message: '' });
     await expect(failed).resolves.toBe(false);
   });

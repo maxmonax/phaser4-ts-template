@@ -37,6 +37,26 @@ for (const window of WINDOWS) {
   });
 }
 
+// Yandex Games asks for a game field of at most 2:1 on a desktop: the build limits it there,
+// centered in the window, and the canvas fills the field.
+const YANDEX_DESKTOP_WINDOWS = [
+  { name: '21:9', width: 1680, height: 720, field: { x: 120, y: 0, width: 1440, height: 720 } },
+  { name: 'a narrow', width: 390, height: 844, field: { x: 0, y: 32, width: 390, height: 780 } },
+  { name: '16:9', width: 1280, height: 720, field: { x: 0, y: 0, width: 1280, height: 720 } },
+];
+
+for (const window of YANDEX_DESKTOP_WINDOWS) {
+  test(`yandex, ${window.name} desktop window: the field is at most 2:1`, async ({ page }) => {
+    await page.setViewportSize({ width: window.width, height: window.height });
+    const game = await openGame(page, 'yandex');
+    await game.loaded();
+
+    await expect(page.locator('canvas')).toBeVisible();
+    expect(await page.locator('canvas').boundingBox()).toEqual(window.field);
+    expect(game.problems).toEqual([]);
+  });
+}
+
 test.describe('a phone', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
 
