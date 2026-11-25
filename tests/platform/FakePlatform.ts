@@ -1,18 +1,23 @@
 import { vi } from 'vitest';
-import type { IPlatform, PlatformHost } from '@/platform/IPlatform';
+import type { IPlatform, LevelAction, PlatformHost } from '@/platform/IPlatform';
 import type { ISaveStorage } from '@/save/ISaveStorage';
 
-/** Test double of a platform adapter: every method is a spy. */
+/**
+ * Test double of a platform adapter: every method is a spy. By default an ad starts at once
+ * and ends on the next microtask.
+ */
 export class FakePlatform implements IPlatform {
   readonly id = 'web';
   hasAds = true;
-  interstitialCooldownMs = 0;
+  interstitialIntervalMs?: number = 0;
+  pauseStopsGameplay?: boolean;
   host: PlatformHost | null = null;
 
   init = vi.fn(async (host: PlatformHost) => {
     this.host = host;
   });
-  getLang = vi.fn((): string | null => 'ru');
+  getLangs = vi.fn((): readonly string[] => ['ru']);
+  getMaxAspect = vi.fn((): number | null => null);
   createStorage = vi.fn(async (): Promise<ISaveStorage> => ({
     load: async () => null,
     save: async () => {},
@@ -20,8 +25,14 @@ export class FakePlatform implements IPlatform {
   loadingFinished = vi.fn();
   gameplayStart = vi.fn();
   gameplayStop = vi.fn();
-  showInterstitial = vi.fn(async () => {});
-  showRewarded = vi.fn(async () => true);
+  levelEvent = vi.fn((_level: string, _action: LevelAction) => {});
+  showInterstitial = vi.fn(async (started: () => void) => {
+    started();
+  });
+  showRewarded = vi.fn(async (started: () => void) => {
+    started();
+    return true;
+  });
 }
 
-export const noopHost: PlatformHost = { setPaused: () => {}, setMuted: () => {} };
+export const noMute = (): void => {};

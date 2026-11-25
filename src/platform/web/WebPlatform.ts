@@ -15,14 +15,13 @@ const SIMULATED_AD_MS = 1000;
  */
 export class WebPlatform implements IPlatform {
   readonly id = 'web';
-  readonly interstitialCooldownMs = 0;
 
   constructor(readonly hasAds: boolean = import.meta.env.DEV) {}
 
   async init(): Promise<void> {}
 
-  getLang(): string | null {
-    return null;
+  getLangs(): readonly string[] {
+    return [];
   }
 
   async createStorage(saveKey: string): Promise<KeyValueSaveStorage> {
@@ -41,15 +40,17 @@ export class WebPlatform implements IPlatform {
     LogMng.debug('platform: gameplay stop');
   }
 
-  async showInterstitial(): Promise<void> {
+  async showInterstitial(started: () => void): Promise<void> {
     if (!this.hasAds) return;
     LogMng.debug('platform: interstitial (simulated)');
+    started();
     await delay(SIMULATED_AD_MS);
   }
 
-  async showRewarded(): Promise<boolean> {
+  async showRewarded(started: () => void): Promise<boolean> {
     if (!this.hasAds) return false;
     LogMng.debug('platform: rewarded ad (simulated)');
+    started();
     await delay(SIMULATED_AD_MS);
     return true;
   }

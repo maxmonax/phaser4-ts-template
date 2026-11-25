@@ -7,8 +7,10 @@ import type { CrazyGamesSDK } from './crazygames-sdk';
 /**
  * CrazyGames, HTML5 SDK v3: https://docs.crazygames.com/sdk/intro/
  *
- * - Ads go only through the SDK. CrazyGames paces midgame ads itself
- *   and ignores requests that come too early.
+ * - Ads go only through the SDK. CrazyGames paces midgame ads itself (about one in
+ *   3 minutes, counting prerolls and rewarded ads) and answers a request that comes too
+ *   early with `adCooldown`. The game still keeps its own interval: fewer useless requests.
+ * - The sound stops only when an ad starts (`adStarted`), not when it is requested.
  * - Between two levels: either a midgame ad or a "watch an ad to continue",
  *   not both (CrazyGames requirement).
  * - `settings.muteAudio` mutes the game; it wins over the in-game sound toggle.
@@ -17,7 +19,6 @@ import type { CrazyGamesSDK } from './crazygames-sdk';
 export class CrazyGamesPlatform implements IPlatform {
   readonly id = 'crazygames';
   readonly hasAds = true;
-  readonly interstitialCooldownMs = 0;
 
   private sdk: CrazyGamesSDK | null = null;
 
@@ -35,8 +36,9 @@ export class CrazyGamesPlatform implements IPlatform {
     this.sdk = sdk;
   }
 
-  getLang(): string | null {
-    return this.getSdk().user.systemInfo?.locale ?? null;
+  getLangs(): readonly string[] {
+    const locale = this.getSdk().user.systemInfo?.locale;
+    return locale ? [locale] : [];
   }
 
   /** The SDK data module: synced to the player account. Without it, `localStorage`. */
@@ -64,19 +66,20 @@ export class CrazyGamesPlatform implements IPlatform {
     this.getSdk().game.gameplayStop();
   }
 
-  showInterstitial(): Promise<void> {
-    return this.requestAd('midgame').then(() => undefined);
+  showInterstitial(started: () => void): Promise<void> {
+    return this.requestAd('midgame', started).then(() => undefined);
   }
 
-  showRewarded(): Promise<boolean> {
-    return this.requestAd('rewarded');
+  showRewarded(started: () => void): Promise<boolean> {
+    return this.requestAd('rewarded', started);
   }
 
   /** Resolves with `true` when the ad was watched to the end. */
-  private requestAd(type: 'midgame' | 'rewarded'): Promise<boolean> {
+  private requestAd(type: 'midgame' | 'rewarded', started: () => void): Promise<boolean> {
     const sdk = this.getSdk();
     return new Promise((resolve) => {
       sdk.ad.requestAd(type, {
+        adStarted: started,
         adFinished: () => resolve(true),
         adError: (error) => {
           // `unfilled` and `adCooldown` are normal: there is just no ad now.

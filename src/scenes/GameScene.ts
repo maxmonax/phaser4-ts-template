@@ -30,6 +30,9 @@ enum State {
 /** The timer ticks aloud when this many seconds are left. */
 const TICK_SECONDS = 3;
 
+/** The demo has one level: every round is an attempt at it. */
+const DEMO_LEVEL = 1;
+
 /**
  * Demo round: pop the orbs before the time is out. The game itself is in `src/demo`;
  * the scene shows how a round talks to the rest of the template:
@@ -37,8 +40,9 @@ const TICK_SECONDS = 3;
  * - the states of the round are an `FSM`: play → pause → play → result;
  * - the pause is a popup over the paused scene (`this.scene.pause()`);
  * - the portal knows when the player is in gameplay (`PlatformMng.gameplayStart/Stop`);
+ * - every round is an attempt at the level for the portal statistics (`levelStart/End`);
  * - ads at the breaks: an interstitial between rounds, a rewarded ad for extra time;
- * - the best score is saved with `SaveMng`.
+ * - the best score is saved with `SaveMng` and offered to the leaderboard (`reportScore`).
  */
 export class GameScene extends BaseScene {
   private _fsm!: FSM;
@@ -72,9 +76,13 @@ export class GameScene extends BaseScene {
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       PlatformMng.gameplayStop();
+      // Left for the menu in the middle of a round: the attempt is lost.
+      PlatformMng.levelEnd(false);
       this._fsm.free();
     });
 
+    // A best score from before the player logged in, or from before the leaderboard existed.
+    void PlatformMng.reportScore(SaveMng.get('best'));
     this.startRound();
   }
 
@@ -86,6 +94,7 @@ export class GameScene extends BaseScene {
     this._round.reset();
     this._lastTick = 0;
     this.refreshHud();
+    PlatformMng.levelStart(DEMO_LEVEL);
     this._fsm.startState(State.Play);
   }
 
@@ -159,10 +168,15 @@ export class GameScene extends BaseScene {
 
   private async runResult(): Promise<void> {
     this._field.stop();
+    // The round is over by time: the attempt is complete. Extra time does not make a new one.
+    PlatformMng.levelEnd(true);
 
     const score = this._round.score;
     const isRecord = score > SaveMng.get('best');
-    if (isRecord) SaveMng.set('best', score);
+    if (isRecord) {
+      SaveMng.set('best', score);
+      void PlatformMng.reportScore(score);
+    }
 
     AudioMng.duckMusic({ volume: 0.3, hold: 1200 });
     AudioMng.playSfx(AudioAlias.RoundEnd);

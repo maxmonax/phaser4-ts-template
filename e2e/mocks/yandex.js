@@ -6,6 +6,13 @@
 
   const sdk = {
     environment: { i18n: { lang: 'ru' } },
+    deviceInfo: {
+      type: window.matchMedia('(pointer: coarse)').matches ? 'mobile' : 'desktop',
+      isDesktop() {
+        return this.type === 'desktop';
+      },
+    },
+    isAvailableMethod: () => Promise.resolve(true),
     features: {
       LoadingAPI: { ready: () => log('LoadingAPI.ready') },
       GameplayAPI: {
@@ -16,11 +23,15 @@
     adv: {
       showFullscreenAdv({ callbacks }) {
         log('showFullscreenAdv');
-        setTimeout(() => callbacks.onClose(true), 300);
+        setTimeout(() => {
+          callbacks.onOpen?.();
+          callbacks.onClose(true);
+        }, 300);
       },
       showRewardedVideo({ callbacks }) {
         log('showRewardedVideo');
         setTimeout(() => {
+          callbacks.onOpen?.();
           callbacks.onRewarded();
           callbacks.onClose();
         }, 300);

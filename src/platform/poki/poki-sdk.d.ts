@@ -14,6 +14,12 @@ export interface PokiSDKApi {
   rewardedBreak(onStart?: () => void): Promise<boolean>;
   /** Player language as a lowercase base code: `en`, `pt`, ... */
   getLanguage(): string;
+  /**
+   * A game event for Poki statistics, e.g. `measure('level', '3', 'start')`. Actions with
+   * a meaning: `start`, `complete`, `fail`; one attempt gets either `complete` or `fail`.
+   * No `/` or `^` in the values.
+   */
+  measure(category: string, what: string, action: string): void;
 }
 
 declare global {

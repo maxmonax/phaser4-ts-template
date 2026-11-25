@@ -23,10 +23,10 @@ import { FrontEvent } from './events/FrontEvent';
 import { ShellBridge } from './events/ShellBridge';
 import { detectLang, LocaleMng } from './locale/LocaleMng';
 import { bindGamePause } from './pause/bindGamePause';
-import { PauseMng } from './pause/PauseMng';
 import { PlatformMng } from './platform/PlatformMng';
 import { SaveMng } from './save/SaveMng';
 import { CenterCameraPlugin } from './scaling/CenterCameraPlugin';
+import { limitFieldAspect } from './scaling/limitFieldAspect';
 import { OrientationAlert } from './scaling/OrientationAlert';
 import { Viewport } from './scaling/Viewport';
 import { loadFonts } from './utils/FontLoader';
@@ -96,19 +96,19 @@ async function boot(): Promise<void> {
   OrientationAlert.checkOrientation();
   ShellBridge.init();
 
+  // The SDK is waited for a few seconds at most: a slow one joins later, see PlatformMng.
   await Promise.all([
-    PlatformMng.init({
-      setPaused: (paused) => PauseMng.set('platform', paused),
-      setMuted: (muted) => AudioMng.setMuted(muted, 'platform'),
-    }),
+    PlatformMng.init((muted) => AudioMng.setMuted(muted, 'platform')),
     loadFonts(Object.values(Config.FONT), Config.FONT_WEIGHTS),
   ]);
+  limitFieldAspect(PlatformMng.getMaxAspect());
   await SaveMng.init(await PlatformMng.createStorage(Config.SAVE.KEY), Config.SAVE.DELAY_MS);
   bindSaveFlush();
   AudioSettings.apply();
 
-  // The language the player picked in the menu wins, then the platform, then the browser.
-  const langs = [SaveMng.get('lang'), PlatformMng.getLang(), ...navigator.languages];
+  // The language the player picked in the menu wins, then the platform's languages, then the
+  // browser's. A platform's list may end with its own fallback: then the browser is not asked.
+  const langs = [SaveMng.get('lang'), ...PlatformMng.getLangs(), ...navigator.languages];
   const locale = LocaleMng.getInstance();
   locale.setLang(detectLang(langs.filter((lang) => lang !== null)));
   // The page language follows the game language: screen readers, hyphenation, portal checks.

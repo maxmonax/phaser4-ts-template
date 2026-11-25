@@ -10,6 +10,7 @@ function fakeSdk() {
     commercialBreak: vi.fn(async () => {}),
     rewardedBreak: vi.fn(async () => true),
     getLanguage: vi.fn(() => 'pt'),
+    measure: vi.fn(),
   };
 }
 
@@ -18,6 +19,7 @@ describe('PokiPlatform', () => {
   let platform: PokiPlatform;
 
   beforeEach(async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     sdk = fakeSdk();
     vi.stubGlobal('PokiSDK', sdk);
     platform = new PokiPlatform();
@@ -26,6 +28,7 @@ describe('PokiPlatform', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('fails to init when the SDK script is not loaded', async () => {
@@ -33,9 +36,26 @@ describe('PokiPlatform', () => {
     await expect(new PokiPlatform().init()).rejects.toThrow('not loaded');
   });
 
-  it('fails to init when the SDK init rejects (ad blocker)', async () => {
+  it('goes on without ads when the SDK init rejects (ad blocker)', async () => {
     sdk.init.mockRejectedValue(new Error('blocked'));
-    await expect(new PokiPlatform().init()).rejects.toThrow('blocked');
+    const blocked = new PokiPlatform();
+
+    await blocked.init();
+    blocked.loadingFinished();
+
+    expect(blocked.hasAds).toBe(false);
+    expect(sdk.gameLoadingFinished).toHaveBeenCalledTimes(1);
+    expect(platform.hasAds).toBe(true);
+  });
+
+  it('leaves the pacing of ads to Poki', () => {
+    expect(platform.interstitialIntervalMs).toBe(0);
+  });
+
+  it('sends level attempts to measure()', () => {
+    platform.levelEvent('3', 'complete');
+
+    expect(sdk.measure).toHaveBeenCalledWith('level', '3', 'complete');
   });
 
   it('maps loading and gameplay calls', () => {
@@ -49,15 +69,19 @@ describe('PokiPlatform', () => {
   });
 
   it('takes the language from getLanguage()', () => {
-    expect(platform.getLang()).toBe('pt');
+    expect(platform.getLangs()).toEqual(['pt']);
   });
 
-  it('maps ads to commercial and rewarded breaks', async () => {
-    await platform.showInterstitial();
+  it('maps ads to commercial and rewarded breaks, started at the request', async () => {
+    const started = vi.fn();
+    await platform.showInterstitial(started);
     expect(sdk.commercialBreak).toHaveBeenCalledTimes(1);
+    // The SDK's own start callback is not always called.
+    expect(started).toHaveBeenCalledTimes(1);
 
-    await expect(platform.showRewarded()).resolves.toBe(true);
+    await expect(platform.showRewarded(started)).resolves.toBe(true);
     sdk.rewardedBreak.mockResolvedValue(false);
-    await expect(platform.showRewarded()).resolves.toBe(false);
+    await expect(platform.showRewarded(started)).resolves.toBe(false);
+    expect(started).toHaveBeenCalledTimes(3);
   });
 });

@@ -47,9 +47,13 @@ that are not visible from the structure, and recipes for common changes.
    `PauseMng.resume(reason)`. A pause menu is `this.scene.pause()` plus
    `PopupScene.open(this, PausePopup)`.
 5. **Ads** go through `AdMng` only (`showInterstitial`, `showRewarded`), at natural breaks. Hide
-   reward buttons when `AdMng.isAvailable()` is false.
+   reward buttons when `AdMng.isAvailable()` is false. `showRewarded()` resolves `false` when no
+   ad started within 5 s: let the player try again. The interval between interstitials is
+   `Config.ADS`; do not add timers of your own.
 6. **Gameplay boundaries.** Call `PlatformMng.gameplayStart()` when the player gets control and
-   `PlatformMng.gameplayStop()` when a round ends or is paused.
+   `PlatformMng.gameplayStop()` when a round ends or is paused. Duplicates are filtered out.
+   An attempt at a level is `PlatformMng.levelStart(level)` … `levelEnd(won)`; a new record goes
+   to `PlatformMng.reportScore(score)`.
 7. **Portal SDKs.** The SDK globals (`YaGames`, `CrazyGames`, `PokiSDK`) appear only inside
    `src/platform/<id>/`. Adapters are imported only dynamically, in `createPlatform()`: a static
    import puts the adapter into every build and fails `check:builds`. Game code talks to

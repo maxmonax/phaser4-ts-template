@@ -64,6 +64,18 @@ describe('bindGamePause', () => {
     expect(setMuted).toHaveBeenLastCalledWith(false, 'pause');
   });
 
+  it('stops the game but not the sound while it waits for an ad', () => {
+    bindGamePause(game as unknown as Phaser.Game);
+    EventBus.emit(FrontEvent.GAME_LOADED);
+
+    PauseMng.pause('adWait');
+    expect(game.pause).toHaveBeenCalledTimes(1);
+    expect(setMuted).not.toHaveBeenCalled();
+
+    PauseMng.pause('ad');
+    expect(setMuted).toHaveBeenLastCalledWith(true, 'pause');
+  });
+
   it('a pause that ends before the game has loaded leaves the game running', () => {
     bindGamePause(game as unknown as Phaser.Game);
     PauseMng.pause('platform');

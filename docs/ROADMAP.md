@@ -1,7 +1,7 @@
 # Roadmap
 
 What could come next for the template, what it does not do well yet, and what has not been
-checked. Nothing here blocks making a game with it. Last reviewed: 2026-11-19.
+checked. Nothing here blocks making a game with it. Last reviewed: 2026-11-20.
 
 Remove an item when it is done; add one when you find a limitation.
 
@@ -17,11 +17,10 @@ Remove an item when it is done; add one when you find a limitation.
 - **More portals** — VK Play, GameDistribution, GamePush and others fit the same scheme: an
   adapter in `src/platform/<id>/`, see [Adding a platform](../README.md#platforms).
 - **Features of one portal** — reviews on Yandex Games (`feedback.canReview()`,
-  `requestReview()`), leaderboards, achievements. They are not in every portal, so they need an
-  optional part of `IPlatform` that the game checks before use.
-- **The ad countdown** — `AdShower` ("Ad in 3… 2… 1…") is not used by the demo: on CrazyGames
-  and Poki the portal decides whether an ad is shown, and the countdown could end with no ad.
-  It fits a portal where the game paces ads itself (`interstitialCooldownMs > 0`, Yandex).
+  `requestReview()`), achievements, more than one leaderboard. They are not in every portal, so
+  they are optional parts of `IPlatform`, as `readScore()` and `writeScore()` are.
+- **The ad countdown** — `AdShower` ("Ad in 3… 2… 1…") is not used by the demo: every portal
+  may decide not to show the ad, and the countdown could end with no ad.
 
 ### Localization
 
@@ -55,6 +54,14 @@ Remove an item when it is done; add one when you find a limitation.
 
 ## Known limitations
 
+- **A late SDK keeps the session on `localStorage`.** An SDK that initializes after the 5-second
+  start wait joins for ads and events, but the language, the saves and the shape of the field
+  have been chosen already: on Yandex the progress of that session is not in the player data,
+  and a desktop window is not limited to 2:1. Moving the saves over when
+  the SDK joins would need a merge of two records.
+- **A late ad loses its reward.** A rewarded ad that starts after the 5-second wait has already
+  answered `false`: the player watches it and gets nothing. The SDKs rarely take that long.
+
 - **The canvas can be larger than the full area.** On a screen wider or taller than the full area
   the canvas covers the whole window, and the part beyond the full area is rendered transparent.
   Phaser's `scale.max` cannot limit it: Phaser applies `max` both to the canvas size and to its
@@ -69,5 +76,6 @@ portal SDK, and by screenshots in headless Chromium. Not checked yet:
 - Safari and iOS, including `(pointer: coarse)` on iPad, which decides whether the rotate overlay
   is shown; Firefox;
 - the real portal SDKs: the Yandex SDK proxy and a draft, CrazyGames developer tools, the Poki
-  Inspector (see [Platforms](../README.md#platforms));
+  Inspector (see [Platforms](../README.md#platforms)), including how fast each one answers an ad
+  request, the Yandex leaderboard and the Poki level events;
 - fullscreen modes of the portals.
